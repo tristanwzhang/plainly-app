@@ -218,6 +218,8 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
     lowConf:"I'm not sure about this one. Please ask someone you trust to look at it too.",
     read:"Read it to me", stopRead:"Stop reading",
     askTrust:"Ask someone you trust", myLang:"My language", english:"English",
+    ctxFound:"What Plainly said:", ctxMessage:"Here is the message:",
+    shareIt:"Share with the photo",
     textIt:"Text it", copy:"Copy", copied:"Copied",
     again:"Check something else", tryAgain:"Try again",
     hidden:"What was hidden before sending", nothingHidden:"Nothing found to hide",
@@ -554,6 +556,8 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
     });
   }
 
+  var lastPhoto = null;
+
   function readPhotos(files){
     var arr = Array.prototype.slice.call(files || []).filter(function(f){ return /^image\//.test(f.type); });
     if (!arr.length){ say(t('err_choosePhoto')); return; }
@@ -582,6 +586,7 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
       var clean = String(text || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
       if (clean.length < 12){ show('home'); say(t('ocrNone')); return; }
       var r = redact(clean);
+      lastPhoto = arr[0] || null;
       analyze({ text:r.text, hint:'letter read from a photo', meta:{ cleaned:r, fromPhoto:true } });
     }).catch(function(){
       show('home');
@@ -647,6 +652,7 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
   $('#pasteGo').addEventListener('click', function(){
     var v = $('#pasteBox').value.trim();
     if (!v){ $('#pasteErr').hidden = false; return; }
+    lastPhoto = null;
     var r = redact(v);
     analyze({ text:r.text, hint:'', meta:{ cleaned:r } });
   });
@@ -738,8 +744,27 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
       fc.appendChild(el('h3', null, t('askTrust')));
       var ta = el('textarea');
       ta.dir = 'auto';
-      var msgMine = String(d.family_message);
-      var msgEn = d.family_message_en ? String(d.family_message_en) : '';
+      // What the reader is asking about, quoted underneath, so the person they
+      // send this to is not being asked to judge something they cannot see.
+      // The quoted text is the redacted version, the same one that was checked.
+      function context(){
+        var out = [];
+        out.push(t('ctxFound') + ' ' + vlabel + (d.headline ? '. ' + String(d.headline) : ''));
+        if (Array.isArray(d.reasons) && d.reasons.length){
+          d.reasons.slice(0, 4).forEach(function(r){ out.push('- ' + String(r)); });
+        }
+        var body = meta.cleaned && meta.cleaned.text ? String(meta.cleaned.text).trim() : '';
+        if (body){
+          var trimmed = body.length > 700;
+          out.push('');
+          out.push(t('ctxMessage'));
+          out.push('"' + body.slice(0, 700).trim() + (trimmed ? '\u2026' : '') + '"');
+        }
+        return out.join('\n');
+      }
+      var ctx = context();
+      var msgMine = String(d.family_message) + (ctx ? '\n\n' + ctx : '');
+      var msgEn = d.family_message_en ? String(d.family_message_en) + (ctx ? '\n\n' + ctx : '') : '';
       ta.value = msgMine;
       ta.setAttribute('aria-label', t('askTrust'));
       if (msgEn && lang.code !== 'en'){
@@ -763,6 +788,14 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
       var sms = el('a','btn alt', t('textIt'));
       sms.href = 'sms:?&body=' + encodeURIComponent(ta.value);
       ta.addEventListener('input', function(){ sms.href = 'sms:?&body=' + encodeURIComponent(ta.value); });
+      if (meta.fromPhoto && lastPhoto && navigator.canShare && navigator.canShare({ files: [lastPhoto] })){
+        var sh = el('button','btn alt', t('shareIt'));
+        sh.type = 'button';
+        sh.addEventListener('click', function(){
+          navigator.share({ text: ta.value, files: [lastPhoto] }).catch(function(){});
+        });
+        row.appendChild(sh);
+      }
       var cp = el('button','btn alt', t('copy'));
       cp.type = 'button';
       cp.addEventListener('click', function(){
