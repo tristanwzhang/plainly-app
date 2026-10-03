@@ -214,3 +214,44 @@ test('a clean check is not reported as proof the item is genuine', () => {
   assert.match(s.what_it_is, /does not mean it is real/i);
   assert.ok(!/looks real|is real\b|safe/i.test(s.headline), `headline overclaims: ${s.headline}`);
 });
+
+// ---------------------------------------- false positives found in real use
+
+test('a genuine PayPal card-update email is not called a scam', () => {
+  // Reported by a user. "card security code (CSC)" is the number printed on a
+  // card, not a one-time code texted to you, and updating it on a company's own
+  // site is routine. The old rule matched the bare phrase "security code" and
+  // convicted on it alone.
+  const r = analyzeSignals([
+    'Update your expired card information for PayPal',
+    'service@paypal.com',
+    'Hello, Tristan Zhang',
+    "We noticed your card ending in 5840 has expired. Please update your card's expiration date",
+    'and card security code (CSC) as soon as possible so you can continue using it with PayPal.',
+    'If you have already updated your PayPal account with your new card information, please disregard this email.',
+  ].join('\n'));
+  assert.notEqual(r.verdict, 'scam', `signals: ${r.signals.map((s) => s.id).join(', ')}`);
+  assert.ok(!r.signals.some((s) => s.id === 'ask_otp'), 'a card security code is not a one-time code');
+  assert.ok(r.positives.length > 0, "should notice the message really is from PayPal's domain");
+});
+
+test('asking you to send card details back is still caught', () => {
+  // The fix above must not blunt the real version of this scam.
+  for (const line of [
+    'Reply with your card number and the security code on the back to restore access.',
+    'Please confirm your CVV and routing number so we can release the refund.',
+  ]) {
+    assert.equal(analyzeSignals(line).verdict, 'scam', `missed: ${line}`);
+  }
+});
+
+test('ordinary mentions of a card are not treated as a request for one', () => {
+  for (const line of [
+    'Questions about a charge? Call the number on the back of your debit card.',
+    'Your card ending in 5840 was charged $24.10 on Sept 28.',
+    'You can update your card details in your account settings.',
+  ]) {
+    const ids = analyzeSignals(line).signals.map((s) => s.id);
+    assert.ok(!ids.includes('ask_card'), `wrongly flagged: ${line}`);
+  }
+});
