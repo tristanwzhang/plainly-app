@@ -386,3 +386,39 @@ test('paying on the senders own domain is not flagged', () => {
   const r = analyzeSignals('billing@comed.com Your bill of $112.45 is due Oct 20. Pay online at https://www.comed.com/pay');
   assert.equal(r.verdict, 'real', `signals: ${r.signals.map((s) => s.id).join(',')}`);
 });
+
+// ------------------------ brand words picked up from around the message
+
+test('a brand in a browser bookmark bar is not read as the sender', () => {
+  // Reported from real use: a screenshot of a whole browser window. The OCR
+  // read the tabs and bookmarks, and the app announced that a rent email was
+  // from Netflix, with a reason naming a domain from the address bar. A bare
+  // brand word is not a claim.
+  const shot = [
+    'Netflix  Inbox (676)  Instagram  My Drive - Google...  Dashboard  Disney+ | Movies a...',
+    'Gmail',
+    'Balance Update - Tristan Zhang at Seven07',
+    'Hunter C <hunter.c@cardinalgroup.com>',
+    'I manage rent payments at Seven07. Please pay your first rent installment today.',
+    'Submit your payment via https://r.eliseai.com/payment/1cc93322.',
+  ].join('\n');
+  const r = analyzeSignals(shot);
+  assert.deepEqual(r.claimed, [], `invented senders: ${r.claimed.join(', ')}`);
+  assert.ok(!r.signals.some((s) => s.id === 'org_domain_mismatch'));
+  // The one finding that is actually about this message must survive the noise.
+  assert.ok(r.signals.some((s) => s.id === 'pay_offsite_link'));
+  assert.equal(r.verdict, 'careful');
+});
+
+test('a real claim is still recognised in its usual shapes', () => {
+  const shapes = [
+    ['IRS: pay at https://irs-fake-portal.com', 'Internal Revenue Service'],
+    ['Your PayPal account is limited. Log in at https://paypal-verify.top', 'PayPal'],
+    ['Amazon security alert. Verify at https://amazon.verify-now.xyz', 'Amazon'],
+    ['Internal Revenue Service\nNotice CP14. Pay at irs.gov/payments.', 'Internal Revenue Service'],
+    ['A message from Chase about your account.', 'Chase'],
+  ];
+  for (const [text, org] of shapes) {
+    assert.ok(analyzeSignals(text).claimed.includes(org), `missed the claim in: ${text}`);
+  }
+});
