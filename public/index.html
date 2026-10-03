@@ -608,9 +608,17 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
     upBtn.classList.remove('alt');
   }
 
+  // The box keeps whatever was checked last otherwise, so "check something
+  // else" led straight back to the same letter.
+  function resetPaste(){
+    $('#pasteBox').value = '';
+    $('#pasteErr').hidden = true;
+  }
+
   $('#pasteBtn').addEventListener('click', function(){
     if (!sample){ say(t('err_noclaude')); return; }
     say(''); $('#pasteErr').hidden = true; show('paste');
+    $('#pasteBox').focus();
   });
   $('#pasteBox').addEventListener('input', function(){ $('#pasteErr').hidden = true; });
   $('#pasteGo').addEventListener('click', function(){
@@ -619,7 +627,7 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
     var r = redact(v);
     analyze({ text:r.text, hint:'', meta:{ cleaned:r } });
   });
-  $('#pasteBack').addEventListener('click', function(){ show('home'); });
+  $('#pasteBack').addEventListener('click', function(){ resetPaste(); show('home'); });
 
   function stopSpeaking(){
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
@@ -746,7 +754,7 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
     }
     var again = el('button','btn alt', readable ? t('again') : t('tryAgain'));
     again.type = 'button';
-    again.addEventListener('click', function(){ stopSpeaking(); show('home'); });
+    again.addEventListener('click', function(){ stopSpeaking(); resetPaste(); show('home'); });
     actions.appendChild(again);
     body.appendChild(actions);
 
