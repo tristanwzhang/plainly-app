@@ -55,12 +55,14 @@ test('rule findings appear in reasons for English readers', () => {
   assert.ok(out.reasons.length <= 4);
 });
 
-test('non-English readers get the model reasons, not English rule text', () => {
-  const rules = analyzeSignals('IRS: pay at https://irs-fake-portal.com now.');
+test('non-English readers get rule findings in their own language', () => {
+  // This used to fall back to the model's reasons because rule wording was
+  // English only. The rules now speak every language the app offers.
+  const rules = analyzeSignals('IRS: pay at https://irs-fake-portal.com now.', { lang: 'es' });
   const out = mergeResults(modelSaid({ reasons: ['Parece un fraude.'] }), rules, { english: false });
-  assert.deepEqual(out.reasons, ['Parece un fraude.']);
-  // The structured signals still travel, so the UI can use them later.
-  assert.ok(out.signals.length > 0);
+  assert.ok(out.reasons.some((r) => /Dice que es de/.test(r)), `expected Spanish rule text, got ${JSON.stringify(out.reasons)}`);
+  assert.ok(out.reasons.includes('Parece un fraude.'), "the model's own reason is kept too");
+  assert.ok(!out.reasons.some((r) => /Says it is from/.test(r)), 'no English should leak through');
 });
 
 test('with no model reply the rules carry the answer', () => {

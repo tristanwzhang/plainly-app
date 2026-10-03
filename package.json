@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node --env-file=.env server.js",
     "mock": "MOCK=1 node server.js",
-    "test": "node --test test/signals.test.js test/merge.test.js test/examples.test.js test/ui-strings.test.js",
+    "test": "node --test test/signals.test.js test/merge.test.js test/examples.test.js test/ui-strings.test.js test/signal-messages.test.js",
     "check": "node tools/check.js"
   },
   "dependencies": {

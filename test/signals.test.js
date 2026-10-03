@@ -181,10 +181,14 @@ test('deadlines are pulled out of ordinary wording', () => {
 });
 
 test('kind labels follow the obvious cues', () => {
-  assert.equal(guessKind('Amount due: $42.10. Statement date: March 1.'), 'Bill');
-  assert.equal(guessKind('Short note about your package.'), 'Text message');
-  assert.equal(guessKind('anything', 'voicemail transcript'), 'Voicemail');
-  assert.equal(guessKind('Dear Mr. Smith,\n\nlong body text here.\n\nSincerely,\nThe Office'), 'Letter');
+  // guessKind returns a stable key; the wording lives in the message table so
+  // it can be said in any language.
+  assert.equal(guessKind('Amount due: $42.10. Statement date: March 1.'), 'bill');
+  assert.equal(guessKind('Short note about your package.'), 'text');
+  assert.equal(guessKind('anything', 'voicemail transcript'), 'voicemail');
+  assert.equal(guessKind('Dear Mr. Smith,\n\nlong body text here.\n\nSincerely,\nThe Office'), 'letter');
+  assert.equal(analyzeSignals('Amount due: $42.10.').kindLabel, 'Bill');
+  assert.equal(analyzeSignals('Amount due: $42.10.', { lang: 'es' }).kindLabel, 'factura');
 });
 
 test('toSchema writes an honest headline and summary without a model', () => {

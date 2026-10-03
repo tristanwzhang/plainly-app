@@ -23,6 +23,7 @@ No key yet? `npm run mock` runs the whole app with canned answers so you can wor
 - `api/analyze.js`: builds the prompt and calls Claude with the text or photos. Returns JSON that the page renders.
 - `api/translate-ui.js`: serves the shipped translations in `data/ui-strings.js` for the 10 non-English languages, instantly and without a model. It only calls the model for a language that is missing or incomplete there, and falls back to the static text (English per missing key) when the model is unavailable.
 - `lib/prompt.js`: the prompt, including the scam signs and the "never tell them to pay or call a number from the message" rule.
+- `data/signal-messages.js`: what each scam signal says, in all 11 languages. The rules emit an id and a few variables, never a finished sentence, so a finding can be worded in any language.
 - Models are set in `.env` (`CLAUDE_MODEL`, `CLAUDE_FAST_MODEL`). Check the current model names in the Anthropic docs.
 
 ## Offline scam checks (no API key)
@@ -30,7 +31,7 @@ No key yet? `npm run mock` runs the whole app with canned answers so you can wor
 `lib/signals.js` scores an item for scam signals using only local rules: no
 network, no key, no cost. It runs instantly and keeps working offline.
 
-    npm test                  # 55 tests
+    npm test                  # 67 tests
     npm run check -- --examples
     npm run check -- "paste a suspicious text here"
 
@@ -70,7 +71,8 @@ there tells someone a real letter is fake, which is the costlier mistake.
 - Rate limiting is a best-effort speed bump. Use a shared store (for example Upstash Redis) before real users.
 - Neither the prompt nor the offline rules have been measured for accuracy. Build a set of 30 to 50 labeled real and fake messages and track how often the verdict is right.
 - The offline rules read a claimed sender out of prose, so an incidental brand mention is misread as the sender ("Google Play cards" makes it say the message claims to be from Google). Cosmetic today; worth narrowing before real users.
-- The scam reasons are written in English only. The interface translates into all 11 languages, but the per-rule explanations do not, and without a model there is nothing to translate them on the fly. For an audience that reads little English this is the largest remaining hole: the fix is translating the rule messages in `lib/signals.js` the way `data/ui-strings.js` handles the interface.
+- **The detection itself only understands English.** The explanations are now translated, but the phrase rules that find them are English regexes, so a scam written in Spanish or Vietnamese will not trigger `pay_gift_card`, `ask_password`, `threat` and the rest. The structural rules — domains, lookalikes, punycode, phone numbers — are language-independent and still work. For an audience that reads little English and therefore receives scams in their own language, this is now the largest hole in the product.
+- The translations in `data/signal-messages.js` and `data/ui-strings.js` are machine translations and have not been checked by native speakers.
 - Redaction runs before the rules see the text, and it can erase a signal: "Dear Valued Customer" becomes "Dear [HIDDEN NAME]", so the generic-greeting rule stops firing. Running the rules in the browser on the original text, before redaction, would fix this. `test/examples.test.js` covers the built-in examples both ways so a regression shows up.
 - The interface translations in `data/ui-strings.js` are machine translations and have NOT been checked by native speakers. The audience reads little English, so a clumsy phrase is a real cost. Have someone who speaks each language read their column and fix it there.
 - Translating the letter itself (`full_translation`) still needs the model. Only the interface works offline.

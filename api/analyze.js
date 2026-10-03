@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   // Offline rules first: no network, no key, no cost. They only run on text —
   // photos are not read as characters, so there is nothing to match against and
   // we must not imply an offline check happened.
-  const rules = text.trim() ? analyzeSignals(text, { hint }) : null;
+  const rules = text.trim() ? analyzeSignals(text, { hint, lang: lang.code }) : null;
   const english = lang.code === 'en';
 
   // Mock mode and a missing key are the same situation: no model to call, so
