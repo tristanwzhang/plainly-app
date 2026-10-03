@@ -7,19 +7,6 @@ const MAX_IMAGES = 3;
 const MAX_B64 = 3_000_000; // about 2.2 MB of image per photo
 const MAX_TEXT = 20_000;
 
-// Stand-in wording for the two fields only a model can write. Chosen to match
-// whatever the offline rules concluded, so mock mode never contradicts itself.
-const MOCK_TEXT = {
-  scam: {
-    headline: 'This looks like a scam',
-    what_it_is: 'A message with clear warning signs. (Mock mode: no model was called, so this sentence is canned.)',
-  },
-  careful: {
-    headline: 'Check this before you do anything',
-    what_it_is: 'Mock mode: no model was called, so this sentence is canned. The warning signs below are real.',
-  },
-};
-
 const MOCK_IMAGE_ONLY = {
   readable: true, kind_label: 'Text message', verdict: 'scam', headline: 'This looks like a scam',
   what_it_is: 'A message that says you owe a small fee.', action_needed: false,
@@ -55,16 +42,11 @@ export default async function handler(req, res) {
   const rules = text.trim() ? analyzeSignals(text, { hint }) : null;
   const english = lang.code === 'en';
 
-  if (process.env.MOCK === '1') {
+  // Mock mode and a missing key are the same situation: no model to call, so
+  // answer with what the rules found. Keeping these identical means what you
+  // see locally is what the deployed site does.
+  if (process.env.MOCK === '1' || !process.env.ANTHROPIC_API_KEY) {
     if (!rules) return res.status(200).json(MOCK_IMAGE_ONLY);
-    const merged = mergeResults(null, rules, { english });
-    return res.status(200).json({ ...merged, ...MOCK_TEXT[merged.verdict === 'scam' ? 'scam' : 'careful'] });
-  }
-
-  // No key configured: still answer with what the rules found rather than
-  // failing. Half an answer beats an error message in front of a user.
-  if (!process.env.ANTHROPIC_API_KEY) {
-    if (!rules) return res.status(503).json({ error: 'no_key_images' });
     return res.status(200).json({ ...mergeResults(null, rules, { english }), degraded: 'no_key' });
   }
 

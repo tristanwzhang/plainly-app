@@ -19,7 +19,7 @@ No key yet? `npm run mock` runs the whole app with canned answers so you can wor
 
 ## How it works
 
-- `public/index.html`: the whole front end (one file). Photos are shrunk and converted to JPEG in the browser. Pasted text and the built-in examples have personal details hidden in the browser before anything is sent.
+- `public/index.html`: the whole front end (one file). Pasted text and the built-in examples have personal details hidden in the browser before anything is sent. Photo input was removed: reading a letter from a photograph needs a model, and this build runs with no API key, so the buttons could only ever return an error. The server still accepts images, so restoring it means putting the buttons back and setting a key.
 - `api/analyze.js`: builds the prompt and calls Claude with the text or photos. Returns JSON that the page renders.
 - `api/translate-ui.js`: serves the shipped translations in `data/ui-strings.js` for the 10 non-English languages, instantly and without a model. It only calls the model for a language that is missing or incomplete there, and falls back to the static text (English per missing key) when the model is unavailable.
 - `lib/prompt.js`: the prompt, including the scam signs and the "never tell them to pay or call a number from the message" rule.
@@ -30,7 +30,7 @@ No key yet? `npm run mock` runs the whole app with canned answers so you can wor
 `lib/signals.js` scores an item for scam signals using only local rules: no
 network, no key, no cost. It runs instantly and keeps working offline.
 
-    npm test                  # 51 tests
+    npm test                  # 55 tests
     npm run check -- --examples
     npm run check -- "paste a suspicious text here"
 
@@ -65,12 +65,12 @@ there tells someone a real letter is fake, which is the costlier mistake.
 
 ## Known gaps (good roadmap slides)
 
-- Photos are not redacted. Next step: run OCR in the browser, hide personal details, send only cleaned text.
+- Photo input is gone from the UI (see above). If it comes back, it still needs OCR in the browser so personal details are hidden before anything is sent.
 - Voicemail works as pasted transcripts only. Real audio needs speech-to-text on the server.
 - Rate limiting is a best-effort speed bump. Use a shared store (for example Upstash Redis) before real users.
 - Neither the prompt nor the offline rules have been measured for accuracy. Build a set of 30 to 50 labeled real and fake messages and track how often the verdict is right.
 - The offline rules read a claimed sender out of prose, so an incidental brand mention is misread as the sender ("Google Play cards" makes it say the message claims to be from Google). Cosmetic today; worth narrowing before real users.
-- Photos are still not covered by the offline rules, because the images are never read as text. Browser OCR would fix this and redact the photos at the same time.
+- The scam reasons are written in English only. The interface translates into all 11 languages, but the per-rule explanations do not, and without a model there is nothing to translate them on the fly. For an audience that reads little English this is the largest remaining hole: the fix is translating the rule messages in `lib/signals.js` the way `data/ui-strings.js` handles the interface.
 - Redaction runs before the rules see the text, and it can erase a signal: "Dear Valued Customer" becomes "Dear [HIDDEN NAME]", so the generic-greeting rule stops firing. Running the rules in the browser on the original text, before redaction, would fix this. `test/examples.test.js` covers the built-in examples both ways so a regression shows up.
 - The interface translations in `data/ui-strings.js` are machine translations and have NOT been checked by native speakers. The audience reads little English, so a clumsy phrase is a real cost. Have someone who speaks each language read their column and fix it there.
 - Translating the letter itself (`full_translation`) still needs the model. Only the interface works offline.

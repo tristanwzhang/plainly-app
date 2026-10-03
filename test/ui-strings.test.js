@@ -111,11 +111,11 @@ test('a cached language is not served to a request wanting more keys', async () 
 
   const many = await call(handler, {
     lang,
-    strings: { check: 'Check it', back: 'Back', upload: 'Upload a photo', paste: 'Paste a text', whatIs: 'What this is' },
+    strings: { check: 'Check it', back: 'Back', paste: 'Paste a text', whatIs: 'What this is', copy: 'Copy' },
   });
   assert.equal(Object.keys(many.body).length, 5, 'every requested key must come back');
-  assert.equal(many.body.upload, 'Subir una foto', 'the extra keys must be translated, not English');
-  assert.equal(many.body.whatIs, 'Qué es esto');
+  assert.equal(many.body.whatIs, 'Qué es esto', 'the extra keys must be translated, not English');
+  assert.equal(many.body.copy, 'Copiar');
 });
 
 test('English is returned untouched without consulting the cache', async () => {
