@@ -49,7 +49,11 @@ header h1{font-size:1.6rem;margin:0;letter-spacing:-.01em}
 :focus-visible{outline:4px solid var(--ink);outline-offset:3px}
 .pick{display:grid;gap:.8rem}
 .btn.big.alt{background:var(--surface)}
-.drop .btn.big{outline:4px dashed var(--brand);outline-offset:3px}
+.dropzone{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:blur(2px)}
+.dropping .dropzone{display:grid}
+.dropzone > div{border:5px dashed var(--brand);border-radius:22px;padding:2.5rem 3rem;text-align:center;background:var(--surface);max-width:80vw}
+.dropzone p{margin:0;font-size:1.6rem;font-weight:700;color:var(--brand);line-height:1.25}
+.dropping{cursor:copy}
 .cats{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
 .cat{font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:.8rem;min-height:4.4rem;text-align:start;cursor:pointer;font-weight:700;font-size:1rem;line-height:1.25}
 .cat span{display:block;font-weight:400;font-size:.8rem;color:var(--muted);margin-top:.15rem}
@@ -120,6 +124,8 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
     <span id="langStatus" role="status"></span>
   </div>
 
+  <div class="dropzone" id="dropzone" aria-hidden="true"><div><p data-i18n="dropHere">Drop your photo here</p></div></div>
+
   <main>
     <section id="home">
       <p class="lead" data-i18n="lead">Got a letter, text, or voicemail you're not sure about? Plainly tells you what it is, whether it's real, and what to do.</p>
@@ -185,7 +191,8 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
     larger:"Larger text", smaller:"Smaller text",
     lead:"Got a letter, text, or voicemail you're not sure about? Plainly tells you what it is, whether it's real, and what to do.",
     takePhoto:"Take a photo of your letter", takePhotoSub:"Opens your camera",
-    upload:"Upload a photo", uploadSub:"Choose from your phone or computer, or drop it here",
+    upload:"Upload a photo", uploadSub:"Choose a file, or drag one anywhere on this page",
+    dropHere:"Drop your photo here",
     paste:"Paste a text, email, or voicemail", pasteSub:"Copy the message, then paste it here",
     cantRead:"I couldn't read this photo.",
     retakeTip:"Try again in good light. Keep the whole page in view and hold the camera still.",
@@ -592,15 +599,31 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
   camInput.addEventListener('change', function(){ readPhotos(camInput.files); camInput.value = ''; });
   upInput.addEventListener('change', function(){ readPhotos(upInput.files); upInput.value = ''; });
 
-  var homeEl = views.home;
-  ['dragenter','dragover'].forEach(function(ev){
-    document.addEventListener(ev, function(e){ if (homeEl.hidden) return; e.preventDefault(); homeEl.classList.add('drop'); });
+  // Dragging a file anywhere over the window offers to read it, from whichever
+  // screen you are on: after checking one letter you should be able to drop the
+  // next without finding your way back first.
+  var dragDepth = 0;
+  function hasFiles(e){
+    var t = e.dataTransfer && e.dataTransfer.types;
+    return t && (Array.prototype.indexOf.call(t, 'Files') >= 0);
+  }
+  function setDragging(on){
+    dragDepth = on ? dragDepth : 0;
+    document.documentElement.classList.toggle('dropping', !!on);
+  }
+  document.addEventListener('dragenter', function(e){
+    if (!hasFiles(e)) return;
+    e.preventDefault(); dragDepth++; document.documentElement.classList.add('dropping');
   });
-  ['dragleave','drop'].forEach(function(ev){
-    document.addEventListener(ev, function(e){ e.preventDefault(); homeEl.classList.remove('drop'); });
+  document.addEventListener('dragover', function(e){ if (hasFiles(e)) e.preventDefault(); });
+  document.addEventListener('dragleave', function(e){
+    if (!hasFiles(e)) return;
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) setDragging(false);
   });
   document.addEventListener('drop', function(e){
-    if (homeEl.hidden) return;
+    if (!hasFiles(e)) return;
+    e.preventDefault(); setDragging(false);
     readPhotos(e.dataTransfer && e.dataTransfer.files);
   });
   if (window.matchMedia && !window.matchMedia('(pointer:coarse)').matches){
