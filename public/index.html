@@ -219,6 +219,7 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
     read:"Read it to me", stopRead:"Stop reading",
     askTrust:"Ask someone you trust", myLang:"My language", english:"English",
     ctxFound:"What Plainly said:", ctxMessage:"Here is the message:",
+    ctxPhoto:"I am sending the photo of it with this.",
     shareIt:"Share with the photo",
     textIt:"Text it", copy:"Copy", copied:"Copied",
     again:"Check something else", tryAgain:"Try again",
@@ -779,6 +780,16 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
         out.push(t('ctxFound') + ' ' + vlabel + (d.headline ? '. ' + String(d.headline) : ''));
         if (Array.isArray(d.reasons) && d.reasons.length){
           d.reasons.slice(0, 4).forEach(function(r){ out.push('- ' + String(r)); });
+        }
+        // Text that was pasted is quoted, because it is the message and nothing
+        // else. Text read from a photo is not: a picture of a screen carries
+        // menus, sidebars and toolbars, and OCR merges them into the same lines
+        // as the letter, so there is no reliable way to quote only the letter.
+        // The photo itself is the better context, and the share button sends it.
+        if (meta.fromPhoto){
+          out.push('');
+          out.push(t('ctxPhoto'));
+          return out.join('\n');
         }
         var body = meta.cleaned && meta.cleaned.text ? String(meta.cleaned.text).trim() : '';
         if (body){
