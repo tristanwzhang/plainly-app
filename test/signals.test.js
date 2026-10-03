@@ -352,3 +352,37 @@ test('a brand in a cheap domain outranks a brand in an ordinary one', () => {
   assert.equal(analyzeSignals('PayPal: account limited. Log in at https://paypal-secure-verify.top/login').verdict, 'scam');
   assert.notEqual(analyzeSignals('no-reply@chase.com View it at https://links.chasealerts.com/u/x').verdict, 'scam');
 });
+
+// ------------------- money asked for, link somewhere other than the sender
+
+test('a payment link on a domain that is not the senders is flagged', () => {
+  // A real rent email that turned out legitimate but should have warned: it
+  // asks for money and sends you to a payment vendor unrelated to the sender.
+  // That is the shape of most payment fraud, and it needs no list of brands.
+  const r = analyzeSignals([
+    'Hunter C <hunter.c@cardinalgroup.com>',
+    'I manage rent payments at Seven07. Please pay your first rent installment today.',
+    'You may view and submit your payment via this link https://r.eliseai.com/payment/1cc93322.',
+  ].join('\n'));
+  assert.equal(r.verdict, 'careful', 'money plus an unrelated payment link deserves a warning');
+  assert.ok(r.signals.some((s) => s.id === 'pay_offsite_link'));
+  // Careful, not scam: a real landlord using a real payment vendor looks the
+  // same, and "check before you send money" is right either way.
+  assert.notEqual(r.verdict, 'scam');
+});
+
+test('a receipt is not read as a request for money', () => {
+  // "payment was received" is a confirmation. Only an actual request counts,
+  // or every receipt with a tracking link would warn.
+  for (const t of [
+    'info@netflix.com Your membership payment of $15.49 was received. See it at https://click.mail-netflix.net/t/9',
+    'service@paypal.com Your card expired. Update it at https://epl.paypal-communication.com/r/a',
+  ]) {
+    assert.equal(analyzeSignals(t).verdict, 'real', `flagged: ${t.slice(0, 40)}`);
+  }
+});
+
+test('paying on the senders own domain is not flagged', () => {
+  const r = analyzeSignals('billing@comed.com Your bill of $112.45 is due Oct 20. Pay online at https://www.comed.com/pay');
+  assert.equal(r.verdict, 'real', `signals: ${r.signals.map((s) => s.id).join(',')}`);
+});
