@@ -6,11 +6,15 @@
   "description": "Plain-language explainer for letters, texts, and voicemails, with scam checks and translation.",
   "scripts": {
     "dev": "node --env-file=.env server.js",
-    "mock": "MOCK=1 node server.js"
+    "mock": "MOCK=1 node server.js",
+    "test": "node --test test/signals.test.js",
+    "check": "node tools/check.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
     "express": "^4.19.2"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
