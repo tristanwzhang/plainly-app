@@ -30,7 +30,7 @@ No key yet? `npm run mock` runs the whole app with canned answers so you can wor
 `lib/signals.js` scores an item for scam signals using only local rules: no
 network, no key, no cost. It runs instantly and keeps working offline.
 
-    npm test                  # 25 tests
+    npm test                  # 36 tests
     npm run check -- --examples
     npm run check -- "paste a suspicious text here"
 
@@ -47,6 +47,18 @@ purpose: real agency mail is genuinely urgent and really does demand money, so
 weighting tone highly would flag legitimate letters and teach people to ignore
 the warnings that matter.
 
+`api/analyze.js` runs these rules on every text item before it calls the
+model, and merges the two. Rules may only make a verdict **more** cautious,
+never less, so a model cannot be talked out of a gift-card demand; they escalate
+only when something actually fired, so a clean run leaves the model's own
+judgment alone. Rule wording is English, so for other languages the model's
+reasons are used instead and the rule findings travel as structured `signals`.
+
+Because of this the app degrades instead of failing. With `npm run mock`, with
+no key set, or when the model is down or returns junk, you still get a real
+verdict from the rules and a `degraded` field saying why. Photo input is the one
+case rules cannot help with, since the images are never read as text.
+
 Add local organizations to `data/known-orgs.js`. Leave a `phones` array empty
 unless the number is confirmed from the organization's own site — a wrong number
 there tells someone a real letter is fake, which is the costlier mistake.
@@ -58,7 +70,7 @@ there tells someone a real letter is fake, which is the costlier mistake.
 - Rate limiting is a best-effort speed bump. Use a shared store (for example Upstash Redis) before real users.
 - Neither the prompt nor the offline rules have been measured for accuracy. Build a set of 30 to 50 labeled real and fake messages and track how often the verdict is right.
 - The offline rules read a claimed sender out of prose, so an incidental brand mention is misread as the sender ("Google Play cards" makes it say the message claims to be from Google). Cosmetic today; worth narrowing before real users.
-- `lib/signals.js` is not wired into `api/analyze.js` yet. The rules and the model path still run separately.
+- Photos are still not covered by the offline rules, because the images are never read as text. Browser OCR would fix this and redact the photos at the same time.
 - Translations have not been checked by native speakers.
 - Add a short terms-of-use and a first-use notice before real users upload anything.
 
