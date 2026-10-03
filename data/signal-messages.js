@@ -71,6 +71,7 @@ export const MESSAGES = {
     safe_generic: 'Do not use the phone number or link in this message. Call the number on a bill, card, or statement you already have, or ask someone you trust.',
     family: 'Hi, I got this and I am not sure it is real. Can you look at it with me before I do anything?',
     ok_domain: 'The link matches {org}’s real web address.',
+    ok_sender: 'The message was sent from {org}’s own email domain.',
     ok_phone: 'The phone number is {org}’s real number.',
   },
 
@@ -123,6 +124,7 @@ export const MESSAGES = {
     safe_generic: 'No use el teléfono ni el enlace de este mensaje. Llame al número de una factura, tarjeta o estado de cuenta que ya tiene, o pregunte a alguien de confianza.',
     family: 'Hola, recibí esto y no estoy seguro de que sea real. ¿Puedes mirarlo conmigo antes de que haga algo?',
     ok_domain: 'El enlace coincide con la dirección web real de {org}.',
+    ok_sender: 'El mensaje se envió desde el dominio de correo propio de {org}.',
     ok_phone: 'El número de teléfono es el número real de {org}.',
   },
 
@@ -175,6 +177,7 @@ export const MESSAGES = {
     safe_generic: '不要用这条消息里的电话或链接。拨打您手上账单、银行卡或对账单上的号码，或问您信任的人。',
     family: '你好，我收到这个，不确定是不是真的。在我做任何事之前，能和我一起看看吗？',
     ok_domain: '链接与 {org} 的真实网址一致。',
+    ok_sender: '这封邮件来自 {org} 自己的邮箱域名。',
     ok_phone: '这个电话号码是 {org} 的真实号码。',
   },
 
@@ -227,6 +230,7 @@ export const MESSAGES = {
     safe_generic: 'इस संदेश का फ़ोन नंबर या लिंक इस्तेमाल न करें। अपने पास मौजूद बिल, कार्ड या स्टेटमेंट पर लिखे नंबर पर कॉल करें, या किसी भरोसेमंद व्यक्ति से पूछें।',
     family: 'नमस्ते, मुझे यह मिला और मुझे पक्का नहीं कि यह असली है। कुछ करने से पहले क्या आप इसे मेरे साथ देख सकते हैं?',
     ok_domain: 'लिंक {org} के असली वेब पते से मेल खाता है।',
+    ok_sender: 'यह संदेश {org} के अपने ईमेल डोमेन से भेजा गया था।',
     ok_phone: 'यह फ़ोन नंबर {org} का असली नंबर है।',
   },
 
@@ -279,6 +283,7 @@ export const MESSAGES = {
     safe_generic: 'لا تستخدم الرقم أو الرابط الوارد في هذه الرسالة. اتصل بالرقم الموجود على فاتورة أو بطاقة أو كشف حساب لديك، أو اسأل شخصًا تثق به.',
     family: 'مرحبًا، وصلتني هذه ولست متأكدًا أنها حقيقية. هل يمكنك النظر فيها معي قبل أن أفعل أي شيء؟',
     ok_domain: 'الرابط يطابق عنوان {org} الحقيقي.',
+    ok_sender: 'أُرسلت الرسالة من نطاق البريد الخاص بـ {org}.',
     ok_phone: 'رقم الهاتف هو رقم {org} الحقيقي.',
   },
 
@@ -331,6 +336,7 @@ export const MESSAGES = {
     safe_generic: '이 메시지의 전화번호나 링크를 쓰지 마세요. 가지고 계신 청구서, 카드, 명세서에 적힌 번호로 전화하거나 믿을 수 있는 분에게 물어보세요.',
     family: '안녕하세요, 이걸 받았는데 진짜인지 모르겠어요. 제가 무언가 하기 전에 같이 봐 주실 수 있나요?',
     ok_domain: '링크가 {org}의 진짜 웹 주소와 일치합니다.',
+    ok_sender: '이 메시지는 {org}의 자체 이메일 도메인에서 발송되었습니다.',
     ok_phone: '전화번호가 {org}의 진짜 번호입니다.',
   },
 
@@ -383,6 +389,7 @@ export const MESSAGES = {
     safe_generic: 'Đừng dùng số điện thoại hay liên kết trong tin này. Hãy gọi số in trên hóa đơn, thẻ hay bảng sao kê bạn đang có, hoặc hỏi người bạn tin tưởng.',
     family: 'Chào, tôi nhận được cái này và không chắc nó có thật không. Bạn xem cùng tôi trước khi tôi làm gì nhé?',
     ok_domain: 'Liên kết khớp với địa chỉ web thật của {org}.',
+    ok_sender: 'Thư được gửi từ tên miền email của chính {org}.',
     ok_phone: 'Số điện thoại là số thật của {org}.',
   },
 
@@ -435,6 +442,7 @@ export const MESSAGES = {
     safe_generic: 'Huwag gamitin ang numero o link sa mensaheng ito. Tawagan ang numero sa bill, card, o statement na hawak mo na, o magtanong sa taong pinagkakatiwalaan mo.',
     family: 'Kumusta, natanggap ko ito at hindi ako sigurado kung totoo. Puwede mo bang tingnan kasama ko bago ako gumawa ng kahit ano?',
     ok_domain: 'Tugma ang link sa totoong web address ng {org}.',
+    ok_sender: 'Ipinadala ang mensahe mula sa sariling email domain ng {org}.',
     ok_phone: 'Ang numero ng telepono ay ang totoong numero ng {org}.',
   },
 
@@ -487,6 +495,7 @@ export const MESSAGES = {
     safe_generic: 'Не пользуйтесь номером или ссылкой из этого сообщения. Позвоните по номеру на вашем счёте, карте или выписке, либо спросите того, кому доверяете.',
     family: 'Привет, мне пришло вот это, и я не уверен, что оно настоящее. Можешь посмотреть вместе со мной, прежде чем я что-то сделаю?',
     ok_domain: 'Ссылка совпадает с настоящим адресом {org}.',
+    ok_sender: 'Письмо отправлено с собственного почтового домена {org}.',
     ok_phone: 'Это настоящий номер телефона {org}.',
   },
 
@@ -539,6 +548,7 @@ export const MESSAGES = {
     safe_generic: 'N’utilisez pas le numéro ni le lien de ce message. Appelez le numéro figurant sur une facture, une carte ou un relevé que vous avez déjà, ou demandez à quelqu’un de confiance.',
     family: 'Bonjour, j’ai reçu ceci et je ne suis pas sûr que ce soit authentique. Peux-tu le regarder avec moi avant que je fasse quoi que ce soit ?',
     ok_domain: 'Le lien correspond à la vraie adresse web de {org}.',
+    ok_sender: 'Le message a été envoyé depuis le domaine de messagerie de {org}.',
     ok_phone: 'Le numéro de téléphone est le vrai numéro de {org}.',
   },
 
@@ -591,6 +601,7 @@ export const MESSAGES = {
     safe_generic: 'Não use o telefone nem o link desta mensagem. Ligue para o número que está na conta, no cartão ou no extrato que você já tem, ou pergunte a alguém de confiança.',
     family: 'Oi, recebi isto e não tenho certeza se é verdadeiro. Você pode olhar comigo antes de eu fazer qualquer coisa?',
     ok_domain: 'O link corresponde ao endereço real da {org}.',
+    ok_sender: 'A mensagem foi enviada do domínio de e-mail da própria {org}.',
     ok_phone: 'O telefone é o número real da {org}.',
   },
 };

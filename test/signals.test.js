@@ -281,3 +281,37 @@ test('ordinary mentions of a card are not treated as a request for one', () => {
     assert.ok(!ids.includes('ask_card'), `wrongly flagged: ${line}`);
   }
 });
+
+// ----------------------------------- real mail from big companies must pass
+
+test('genuine company mail that links to a tracking domain is not flagged', () => {
+  // Big companies send from their own domain but link to marketing and
+  // tracking hosts. Before this, every such email tripped brand_subdomain and
+  // came back "be careful", which is most of why ordinary mail looked wrong.
+  const real = [
+    'service@paypal.com Hello Tristan. Your card expired. Update it at https://epl.paypal-communication.com/r/abc123',
+    'no-reply@chase.com A charge was made on your card. View it at https://links.chasealerts.com/u/xyz',
+    'info@netflix.com Your bill is ready. See it at https://click.mail-netflix.net/track/99',
+  ];
+  for (const t of real) {
+    const r = analyzeSignals(t);
+    assert.equal(r.verdict, 'real', `flagged: ${t.slice(0, 40)} -> ${r.signals.map((s) => s.id).join(',')}`);
+    assert.ok(r.positives.length > 0, 'a matching sender domain is evidence and should be shown');
+  }
+});
+
+test('the sender check never rescues a message with a conclusive sign', () => {
+  // A forged From line must not be able to clear a real scam. Sender matching
+  // only ever suppresses the weaker, dual-use link findings.
+  const r = analyzeSignals('service@paypal.com Buy a $500 gift card and reply with the code.');
+  assert.equal(r.verdict, 'scam');
+});
+
+test('a brand lookalike is still caught when no real sender backs it', () => {
+  for (const t of [
+    'PayPal: your account is limited. Log in at https://paypal-secure-verify.top/login',
+    'PayPal security. Sign in at http://paypa1.com/resolve',
+  ]) {
+    assert.equal(analyzeSignals(t).verdict, 'scam', `missed: ${t}`);
+  }
+});
