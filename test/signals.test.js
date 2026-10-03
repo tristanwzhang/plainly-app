@@ -315,3 +315,40 @@ test('a brand lookalike is still caught when no real sender backs it', () => {
     assert.equal(analyzeSignals(t).verdict, 'scam', `missed: ${t}`);
   }
 });
+
+// ------------------------------- being GIVEN a code is not being ASKED for one
+
+test('a two-factor code email is not a scam', () => {
+  // The most common legitimate automated email there is. These used to come
+  // back as "likely a scam", and the one that says "do not share this code"
+  // was also flagged for telling you to keep a secret.
+  for (const t of [
+    'Your verification code is 847291. It expires in 10 minutes.',
+    'Here is your one-time code: 553021. Do not share it with anyone.',
+    'Chase: your one-time passcode is 332211. Never share this code.',
+  ]) {
+    assert.equal(analyzeSignals(t).verdict, 'real', `flagged: ${t}`);
+  }
+});
+
+test('being asked to hand a code over is still a scam', () => {
+  for (const t of [
+    'To cancel the charge, reply with the 6-digit verification code we texted you.',
+    'Read me the code we just sent to your phone.',
+  ]) {
+    assert.equal(analyzeSignals(t).verdict, 'scam', `missed: ${t}`);
+  }
+});
+
+test('your own email address in a receipt is not a link somewhere wrong', () => {
+  // "Apple ID: you@gmail.com" was being read as Apple linking to Gmail.
+  const r = analyzeSignals('Your receipt from Apple. Apple ID: t***@gmail.com. Total $9.99.');
+  assert.equal(r.verdict, 'real', `signals: ${r.signals.map((s) => s.id).join(',')}`);
+});
+
+test('a brand in a cheap domain outranks a brand in an ordinary one', () => {
+  // chasealerts.com is plausible marketing infrastructure; paypal-verify.top is
+  // not, and the address ending is what separates them.
+  assert.equal(analyzeSignals('PayPal: account limited. Log in at https://paypal-secure-verify.top/login').verdict, 'scam');
+  assert.notEqual(analyzeSignals('no-reply@chase.com View it at https://links.chasealerts.com/u/x').verdict, 'scam');
+});
