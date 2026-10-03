@@ -558,6 +558,33 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
 
   var lastPhoto = null;
 
+  // A photo of a screen catches whatever else was on it: tab strips, the
+  // address bar, a bookmark bar. OCR turns those into lines of short broken
+  // tokens, which then land in the detector and, worse, inside the message the
+  // reader forwards to their family. Judged on shape rather than on any list of
+  // app names, so it is not tied to one browser or language.
+  function tidyOcr(text){
+    var kept = String(text || '').split(/\r?\n/).filter(function(ln){
+      var t = ln.trim();
+      if (!t) return false;
+      var dense = t.replace(/\s/g, '');
+      if (!dense) return false;
+      // Mostly symbols and stray marks rather than words.
+      var letters = (dense.match(/[A-Za-z\u00C0-\u024F\u0400-\u04FF\u0600-\u06FF\u0900-\u097F\u4E00-\u9FFF\uAC00-\uD7AF]/g) || []).length;
+      if (letters / dense.length < 0.55) return false;
+      // A row of icons and truncated labels: many tokens, nearly all tiny.
+      var toks = t.split(/\s+/);
+      if (toks.length >= 5){
+        var tiny = toks.filter(function(w){ return w.replace(/[^\w]/g, '').length < 3; }).length;
+        if (tiny / toks.length > 0.45) return false;
+      }
+      // Separator-heavy, the shape of a tab strip.
+      if ((t.match(/\|/g) || []).length >= 3) return false;
+      return true;
+    });
+    return kept.join('\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
   function readPhotos(files){
     var arr = Array.prototype.slice.call(files || []).filter(function(f){ return /^image\//.test(f.type); });
     if (!arr.length){ say(t('err_choosePhoto')); return; }
@@ -583,7 +610,7 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
         });
       });
     }).then(function(text){
-      var clean = String(text || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+      var clean = tidyOcr(text);
       if (clean.length < 12){ show('home'); say(t('ocrNone')); return; }
       var r = redact(clean);
       lastPhoto = arr[0] || null;
