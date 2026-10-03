@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plainly: understand any letter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F6F8FB;--surface:#FFFFFF;--ink:#12233F;--muted:#44566F;--line:#C5D0E0;
+  --brand:#1B4FA0;--brand-ink:#FFFFFF;
+  --ok-bg:#E3F4EA;--ok:#14663B;--warn-bg:#FFF1D6;--warn:#8A4B00;--bad-bg:#FDE4E2;--bad:#A3201A;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1726;--surface:#16233A;--ink:#EEF3FB;--muted:#B3C0D6;--line:#2E3F5E;
+    --brand:#7FB0FF;--brand-ink:#0E1726;
+    --ok-bg:#12331F;--ok:#8FE0B0;--warn-bg:#3A2A0B;--warn:#FFD28A;--bad-bg:#3E1815;--bad:#FFB4AE;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1726;--surface:#16233A;--ink:#EEF3FB;--muted:#B3C0D6;--line:#2E3F5E;
+  --brand:#7FB0FF;--brand-ink:#0E1726;
+  --ok-bg:#12331F;--ok:#8FE0B0;--warn-bg:#3A2A0B;--warn:#FFD28A;--bad-bg:#3E1815;--bad:#FFB4AE;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{font-size:20px;scroll-padding-top:env(safe-area-inset-top,0px)}
+html.big{font-size:24px}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Atkinson Hyperlegible','Noto Sans',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.5}
+.wrap{max-width:34rem;margin:0 auto;padding:1rem 1.1rem 3rem}
+header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+header h1{font-size:1.6rem;margin:0;letter-spacing:-.01em}
+.size{font:inherit;font-size:.85rem;font-weight:700;color:var(--brand);background:transparent;border:2px solid var(--brand);border-radius:999px;padding:.35rem .8rem;cursor:pointer;min-height:2.4rem}
+.langrow{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:0 0 1.2rem}
+.langlbl{font-size:.85rem;color:var(--muted);font-weight:700}
+#langSel{font:inherit;font-size:1rem;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:.4rem .6rem;min-height:2.6rem;max-width:100%}
+#langStatus{font-size:.85rem;color:var(--muted)}
+.lead{font-size:1.25rem;line-height:1.35;margin:0 0 1.2rem;font-weight:700}
+.btn{display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;min-height:3.4rem;border-radius:14px;border:2px solid var(--brand);background:var(--brand);color:var(--brand-ink);font:inherit;font-weight:700;font-size:1.05rem;padding:.7rem 1rem;cursor:pointer;text-decoration:none;text-align:center}
+.btn.alt{background:transparent;color:var(--brand)}
+.btn.big{min-height:6.5rem;font-size:1.3rem;flex-direction:column;gap:.2rem}
+.btn small{font-size:.8rem;font-weight:400;opacity:.9}
+:focus-visible{outline:4px solid var(--ink);outline-offset:3px}
+.pick{display:grid;gap:.8rem}
+.btn.big.alt{background:var(--surface)}
+.drop .btn.big{outline:4px dashed var(--brand);outline-offset:3px}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.cat{font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:.8rem;min-height:4.4rem;text-align:start;cursor:pointer;font-weight:700;font-size:1rem;line-height:1.25}
+.cat span{display:block;font-weight:400;font-size:.8rem;color:var(--muted);margin-top:.15rem}
+.cat[aria-pressed="true"]{border-color:var(--brand);box-shadow:inset 0 0 0 2px var(--brand)}
+#sampleList{margin-top:.8rem}
+.or{color:var(--muted);margin:1.6rem 0 .6rem;font-weight:700}
+.sample{display:block;width:100%;text-align:start;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:.9rem 1rem;margin-bottom:.7rem;cursor:pointer}
+.sample b{display:block;font-size:1.05rem}
+.sample span{color:var(--muted);font-size:.9rem}
+.sample:hover{border-color:var(--brand)}
+.msg{margin:1rem 0 0;padding:.8rem 1rem;border-radius:12px;background:var(--warn-bg);color:var(--warn);border:2px solid var(--warn);font-weight:700}
+.busy{text-align:center;padding:2.5rem 0 1rem}
+.busy h2{font-size:1.5rem;margin:0 0 .4rem}
+.busy p{color:var(--muted);margin:0 0 1.6rem}
+.dots{display:flex;gap:.6rem;justify-content:center;margin-bottom:1.6rem}
+.dots i{width:.9rem;height:.9rem;border-radius:50%;background:var(--brand);display:block;opacity:.45}
+@media (prefers-reduced-motion:no-preference){.dots i{animation:pulse 1.2s ease-in-out infinite}.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}}
+@keyframes pulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+.kind{margin:0 0 .5rem;color:var(--muted);font-weight:700;font-size:.95rem}
+.verdict{display:flex;gap:.9rem;align-items:flex-start;border:3px solid;border-radius:16px;padding:1.1rem}
+.verdict.real{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.verdict.careful{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.verdict.scam{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.badge{flex:none;width:2.8rem;height:2.8rem;border-radius:50%;background:currentColor;display:grid;place-items:center}
+.badge span{color:var(--surface);font-size:1.5rem;font-weight:700;line-height:1}
+.verdict h2{margin:0;font-size:1.5rem;line-height:1.2}
+.verdict p{margin:.25rem 0 0;font-size:1.05rem;color:var(--ink)}
+.card{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:1rem 1.1rem;margin-top:.9rem}
+.card h3{margin:0 0 .35rem;font-size:1rem;color:var(--muted)}
+.card p{margin:0;font-size:1.1rem}
+.card ul{margin:0;padding-inline-start:1.2rem;font-size:1.05rem}
+.card li{margin:.25rem 0}
+.deadline{margin-top:.5rem!important;font-weight:700}
+.actions{display:grid;gap:.7rem;margin-top:1.2rem}
+textarea{width:100%;font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:10px;padding:.7rem;min-height:6.5rem;resize:vertical}
+#pasteBox{min-height:12rem}
+.pasteh{font-size:1.4rem;margin:0 0 .4rem}
+.pastep{color:var(--muted);margin:0 0 .8rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.6rem}
+.seg{display:flex;gap:.5rem;margin:.2rem 0 .6rem}
+.seg button{font:inherit;font-size:.9rem;font-weight:700;color:var(--brand);background:transparent;border:2px solid var(--brand);border-radius:999px;padding:.25rem .8rem;cursor:pointer;min-height:2.2rem}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+details{margin-top:.9rem;background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:.8rem 1.1rem}
+summary{cursor:pointer;font-weight:700;color:var(--brand);min-height:2rem}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.7rem 0}
+.chip{font-size:.8rem;font-weight:700;background:var(--ok-bg);color:var(--ok);border:1.5px solid var(--ok);border-radius:999px;padding:.15rem .6rem}
+pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin:0}
+.trtext{white-space:pre-wrap;font-size:1.05rem;margin:.7rem 0 0}
+.fine{color:var(--muted);font-size:.8rem;margin-top:1.4rem;line-height:1.45}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Plainly</h1>
+    <button class="size" id="sizeBtn" type="button" aria-pressed="false">Larger text</button>
+  </header>
+  <div class="langrow">
+    <label class="langlbl" for="langSel">Language &middot; Idioma &middot; 语言 &middot; भाषा &middot; لغة &middot; 언어</label>
+    <select id="langSel"></select>
+    <span id="langStatus" role="status"></span>
+  </div>
+
+  <main>
+    <section id="home">
+      <p class="lead" data-i18n="lead">Got a letter, text, or voicemail you're not sure about? Plainly tells you what it is, whether it's real, and what to do.</p>
+
+      <div class="pick" id="pick">
+        <label class="btn big" id="camBtn" for="camInput" tabindex="0" role="button">
+          <span data-i18n="takePhoto">Take a photo of your letter</span>
+          <small data-i18n="takePhotoSub">Opens your camera</small>
+        </label>
+        <label class="btn big alt" id="upBtn" for="upInput" tabindex="0" role="button">
+          <span data-i18n="upload">Upload a photo</span>
+          <small data-i18n="uploadSub">Choose from your phone or computer, or drop it here</small>
+        </label>
+        <button class="btn alt" id="pasteBtn" type="button" data-i18n="paste">Paste a text, email, or voicemail</button>
+      </div>
+      <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+      <input type="file" id="upInput" accept="image/*" multiple hidden>
+
+      <p class="or" id="orLabel" data-i18n="pickKind">Not sure what to try? Pick a kind of message.</p>
+      <div class="cats" id="cats"></div>
+      <div id="sampleList" hidden></div>
+
+      <div class="msg" id="msg" role="alert" hidden></div>
+    </section>
+
+    <section id="paste" hidden>
+      <h2 class="pasteh" tabindex="-1" data-focus data-i18n="pasteTitle">Paste it here</h2>
+      <p class="pastep" data-i18n="pasteHelp">Copy a text, an email, or a voicemail transcript and paste it below. Many phones can turn a voicemail into text.</p>
+      <textarea id="pasteBox" data-i18n-ph="pastePh" placeholder="Paste here"></textarea>
+      <div class="msg" id="pasteErr" role="alert" hidden data-i18n="pasteErr">Paste something first.</div>
+      <div class="actions">
+        <button class="btn" id="pasteGo" type="button" data-i18n="check">Check it</button>
+        <button class="btn alt" id="pasteBack" type="button" data-i18n="back">Back</button>
+      </div>
+    </section>
+
+    <section id="busy" hidden aria-live="polite">
+      <div class="busy">
+        <h2 tabindex="-1" data-focus data-i18n="busyTitle">Reading your letter</h2>
+        <p data-i18n="busySub">This takes about 20 seconds.</p>
+        <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        <button class="btn alt" id="cancelBtn" type="button" data-i18n="cancel">Cancel</button>
+      </div>
+    </section>
+
+    <section id="result" hidden>
+      <div id="resultBody"></div>
+    </section>
+  </main>
+
+  <p class="fine" data-i18n="fine">Prototype for a hackathon. Plainly can make mistakes. Use the phone number on your own card or statement, never one printed on a letter. Examples are fake. Personal details in examples and pasted text are hidden on this device before anything is sent. Photos are sent as taken for now.</p>
+</div>
+
+<script>
+(function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var views = { home:$('#home'), paste:$('#paste'), busy:$('#busy'), result:$('#result') };
+  var sample = null, imagesOk = false, limitsKnown = false, maxImgs = 1;
+  var ctl = null, speaking = false, lastRun = null;
+
+  var STR = {
+    larger:"Larger text", smaller:"Smaller text",
+    lead:"Got a letter, text, or voicemail you're not sure about? Plainly tells you what it is, whether it's real, and what to do.",
+    takePhoto:"Take a photo of your letter", takePhotoSub:"Opens your camera",
+    upload:"Upload a photo", uploadSub:"Choose from your phone or computer, or drop it here",
+    paste:"Paste a text, email, or voicemail",
+    pickKind:"Not sure what to try? Pick a kind of message.",
+    cat0:"Health and insurance", cat1:"Bank and cards", cat2:"Government and benefits",
+    cat3:"Texts and emails", cat4:"Voicemails", cat5:"Bills and utilities",
+    nExamples:"{n} examples",
+    pasteTitle:"Paste it here",
+    pasteHelp:"Copy a text, an email, or a voicemail transcript and paste it below. Many phones can turn a voicemail into text.",
+    pastePh:"Paste here", pasteErr:"Paste something first.", check:"Check it", back:"Back",
+    busyTitle:"Reading your letter", busySub:"This takes about 20 seconds.", cancel:"Cancel",
+    kindPre:"This looks like:",
+    v_real:"Looks real", v_careful:"Be careful", v_scam:"Likely a scam",
+    cantRead:"I couldn't read this photo.",
+    retakeTip:"Try again in good light. Keep the whole page in view and hold the camera still.",
+    whatIs:"What this is", doIAct:"Do I need to do anything?", yes:"Yes.", no:"No.",
+    timeFrame:"Time frame:", why:"Why I think so", safeStep:"Safe next step",
+    lowConf:"I'm not sure about this one. Please ask someone you trust to look at it too.",
+    read:"Read it to me", stopRead:"Stop reading",
+    askTrust:"Ask someone you trust", myLang:"My language", english:"English",
+    textIt:"Text it", copy:"Copy", copied:"Copied",
+    again:"Check something else", tryAgain:"Try again",
+    hidden:"What was hidden before sending", nothingHidden:"Nothing found to hide",
+    photoNote:"This photo was sent as taken. Hiding personal details on photos is not built yet.",
+    fullTr:"Read the whole letter in my language",
+    fine:"Prototype for a hackathon. Plainly can make mistakes. Use the phone number on your own card or statement, never one printed on a letter. Examples are fake. Personal details in examples and pasted text are hidden on this device before anything is sent. Photos are sent as taken for now.",
+    err_noclaude:"Something is not set up yet. Please try again later.",
+    err_choosePhoto:"Please choose a photo (a JPG or PNG picture).",
+    err_nophotos:"Photos are not working right now. Try an example below.",
+    err_notgranted:"Something went wrong. Please try again.",
+    err_disabled:"Reading letters is not available on this account.",
+    err_rate:"Too many tries in a short time. Wait a minute and try again.",
+    err_session:"Please sign in again, then try again.",
+    err_image:"That photo did not work. Try taking it again with the whole page in view.",
+    err_refused:"I couldn't help with that one. Ask someone you trust to look at it.",
+    err_empty:"I did not get an answer. Please try again.",
+    err_json:"I got confused reading that one. Please try again.",
+    err_upstream:"Something went wrong on our side. Please try again."
+  };
+  var ERRMAP = {
+    not_granted:'err_notgranted', sampling_disabled:'err_disabled', rate_limited:'err_rate',
+    session_expired:'err_session', image_rejected:'err_image', images_unavailable:'err_nophotos',
+    refused:'err_refused', empty_completion:'err_empty', invalid_json:'err_json', upstream_error:'err_upstream'
+  };
+
+  var LANGS = [
+    { code:'en', native:'English', en:'English', tts:'en-US' },
+    { code:'es', native:'Español', en:'Spanish', tts:'es-US' },
+    { code:'zh', native:'中文 (简体)', en:'Simplified Chinese', tts:'zh-CN' },
+    { code:'hi', native:'हिन्दी', en:'Hindi', tts:'hi-IN' },
+    { code:'ar', native:'العربية', en:'Arabic', tts:'ar-SA', rtl:true },
+    { code:'ko', native:'한국어', en:'Korean', tts:'ko-KR' },
+    { code:'vi', native:'Tiếng Việt', en:'Vietnamese', tts:'vi-VN' },
+    { code:'tl', native:'Tagalog', en:'Tagalog', tts:'fil-PH' },
+    { code:'ru', native:'Русский', en:'Russian', tts:'ru-RU' },
+    { code:'fr', native:'Français', en:'French', tts:'fr-FR' },
+    { code:'pt', native:'Português', en:'Portuguese', tts:'pt-BR' }
+  ];
+  var lang = LANGS[0], cur = {}, T = {}, uiToken = 0;
+
+  function t(key){ return (cur && cur[key]) || STR[key] || key; }
+  function el(tag, cls, text){
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function show(name){
+    for (var k in views) views[k].hidden = (k !== name);
+    window.scrollTo(0,0);
+    var f = views[name].querySelector('[data-focus]');
+    if (f) f.focus();
+  }
+  function say(msg){
+    var m = $('#msg');
+    if (!msg){ m.hidden = true; return; }
+    m.textContent = msg; m.hidden = false;
+  }
+
+  var sizeBtn = $('#sizeBtn');
+  function setBig(on){
+    document.documentElement.classList.toggle('big', on);
+    sizeBtn.textContent = on ? t('smaller') : t('larger');
+    sizeBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    try { localStorage.setItem('plainly-big', on ? '1' : '0'); } catch(e){}
+  }
+  sizeBtn.addEventListener('click', function(){
+    setBig(!document.documentElement.classList.contains('big'));
+  });
+  try { if (localStorage.getItem('plainly-big') === '1') setBig(true); } catch(e){}
+
+  function applyI18n(){
+    var nodes = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < nodes.length; i++) nodes[i].textContent = t(nodes[i].getAttribute('data-i18n'));
+    var ph = document.querySelectorAll('[data-i18n-ph]');
+    for (var j = 0; j < ph.length; j++){
+      var txt = t(ph[j].getAttribute('data-i18n-ph'));
+      ph[j].placeholder = txt; ph[j].setAttribute('aria-label', txt);
+    }
+    sizeBtn.textContent = document.documentElement.classList.contains('big') ? t('smaller') : t('larger');
+    document.documentElement.lang = lang.code === 'zh' ? 'zh-Hans' : lang.code;
+    document.documentElement.dir = lang.rtl ? 'rtl' : 'ltr';
+    buildSamples();
+  }
+
+  var sel = $('#langSel');
+  LANGS.forEach(function(l){
+    var o = el('option', null, l.native);
+    o.value = l.code;
+    sel.appendChild(o);
+  });
+
+  function ensureUI(){
+    var token = ++uiToken;
+    if (lang.code === 'en'){ cur = {}; return Promise.resolve(true); }
+    if (T[lang.code]){ cur = T[lang.code]; return Promise.resolve(true); }
+    if (!sample){ cur = {}; return Promise.resolve(false); }
+    $('#langStatus').textContent = '…';
+    sel.disabled = true;
+    return api('/api/translate-ui', { lang:{ code:lang.code, en:lang.en, native:lang.native }, strings:STR }).then(function(obj){
+      if (token !== uiToken) return false;
+      var out = {};
+      Object.keys(STR).forEach(function(k){ out[k] = (obj && typeof obj[k] === 'string' && obj[k]) ? obj[k] : STR[k]; });
+      T[lang.code] = out; cur = out;
+      return true;
+    }).catch(function(){
+      if (token === uiToken) cur = {};
+      return false;
+    }).then(function(ok){
+      if (token === uiToken){ $('#langStatus').textContent = ''; sel.disabled = false; }
+      return ok;
+    });
+  }
+
+  function setLang(code, quiet){
+    lang = LANGS.filter(function(l){ return l.code === code; })[0] || LANGS[0];
+    sel.value = lang.code;
+    try { localStorage.setItem('plainly-lang', lang.code); } catch(e){}
+    document.documentElement.lang = lang.code === 'zh' ? 'zh-Hans' : lang.code;
+    document.documentElement.dir = lang.rtl ? 'rtl' : 'ltr';
+    stopSpeaking();
+    ensureUI().then(function(ok){
+      applyI18n();
+      if (!ok && lang.code !== 'en' && !quiet){
+        say("Couldn't translate the buttons. Your letter will still be explained in " + lang.en + ".");
+      }
+      if (!views.result.hidden && lastRun) analyze(lastRun);
+    });
+  }
+  sel.addEventListener('change', function(){ setLang(sel.value, false); });
+
+  var CATS = [
+    { name:'Health and insurance', items:[
+      { title:'Letter from a health plan', desc:'About a scan in August', hint:'letter from a health insurance plan', text:
+"Prairie Health Plan\nExplanation of Benefits. THIS IS NOT A BILL.\n\nPatient: Margaret Ellis\n412 Oak Lane\nUrbana, IL 61801\nMember ID: PHP-48291736\nDate of birth: 03/14/1951\n\nDate of service: August 12, 2026\nProvider: Central Illinois Imaging Center\nAmount billed: $1,240.00\nPlan discount: $310.00\nPlan paid: $730.00\nYour share (deductible): $200.00\n\nYou may receive a separate bill from the provider for $200.00. If you disagree with how this claim was handled, you have the right to appeal within 180 days of the date of this notice (October 1, 2026).\n\nQuestions? Call Member Services at the number on the back of your member card." },
+      { title:'Bill from a scan center', desc:'Says a balance is due', hint:'medical bill', text:
+"Central Illinois Imaging Center\nStatement of account\n\nPatient: Margaret Ellis\nAccount number: CIIC-2208841\nDate of service: August 12, 2026\n\nCT scan, abdomen ............ $1,240.00\nInsurance payment ............ $730.00\nInsurance adjustment ......... $310.00\nPatient balance .............. $200.00\n\nCT scan, abdomen (second entry) .. $1,240.00\nBalance now due: $1,440.00\n\nPay by October 20, 2026 to avoid collections. Pay online or call our billing office at 217-555-0188." }
+    ]},
+    { name:'Bank and cards', items:[
+      { title:'Monthly bank statement', desc:'September activity', hint:'bank statement', text:
+"Heartland Community Bank\nMonthly statement: September 2026\n\nAccount holder: Margaret Ellis\nChecking account number: 4400-2287-1130\nStatement period: Sept 1 to Sept 30, 2026\n\nStarting balance ....... $3,412.55\nDeposits ............... $1,850.00 (Social Security)\nWithdrawals ............ $1,126.40\nFees ................... $0.00\nEnding balance ......... $4,136.15\n\nSome of this month's withdrawals:\nSept 14  Grocery store ........ $86.20\nSept 18  Electric company ..... $112.45\nSept 22  StreamBox Plus ....... $15.99\nSept 22  SafeVault Premium .... $29.99\nSept 28  Pharmacy ............. $24.10\n\nQuestions about a charge? Call the number on the back of your debit card." },
+      { title:'Letter from a bank', desc:'Says to act within 48 hours', hint:'letter that claims to be from a bank', text:
+"Heartland Community Bank. SECURITY DEPARTMENT\nDear Valued Customer,\n\nWe have detected unusual sign-ins on your checking account. Your account will be CLOSED in 48 hours unless you verify your details.\n\nCall our Security Team at 1-844-555-0167 or visit www.heartland-secure-verify.example and enter your online banking password and the 6-digit code we text you.\n\nFailure to act will result in permanent loss of funds.\n\nAccount: 4400-2287-1130" }
+    ]},
+    { name:'Government and benefits', items:[
+      { title:'Letter about Social Security', desc:'Says it is urgent', hint:'letter that claims to be from Social Security', text:
+"SOCIAL SECURITY ADMINISTRATION. FINAL NOTICE\nDear Margaret Ellis,\n\nYour Social Security number ending in 4821 has been linked to suspicious activity. Your benefits will be SUSPENDED within 24 hours and a warrant may be issued.\n\nYou must call Officer Dale Brooks immediately at 1-800-555-0142 to avoid arrest. Do not discuss this letter with your family or your bank.\n\nTo resolve the case, a refund deposit of $850 must be paid today using gift cards or a wire transfer. Have your full Social Security number and bank account number ready when you call.\n\nCase ID: SSA-77-90312" },
+      { title:'Yearly benefit notice', desc:'About a change in January', hint:'letter about government benefits', text:
+"Social Security Administration\nNotice of Cost-of-Living Adjustment\n\nDear Margaret Ellis,\n\nBeginning in January 2027, your monthly benefit will go up by 2.8 percent. Your new monthly benefit will be $1,901.80 before any deductions.\n\nYou do not need to do anything. This notice is for your records.\n\nIf you have questions, visit ssa.gov or call the number listed on your benefit statement." }
+    ]},
+    { name:'Texts and emails', items:[
+      { title:'Text about a package', desc:'From an unknown number', hint:'text message', text:
+"Text message from +1 (555) 013-0149:\nUSPS: Your package could not be delivered because of an unpaid fee of $1.99. Pay within 12 hours at usps-parcel-hold.example/pay or it will be returned." },
+      { title:'Text about a purchase', desc:'From a short number', hint:'text message', text:
+"Text message from 22733:\nHeartland Community Bank fraud alert: Did you make a $412.00 purchase at ELECTRO MART on 10/01? Reply YES or NO. We will never ask for your password or a code by text." }
+    ]},
+    { name:'Voicemails', items:[
+      { title:'Voicemail about a charge', desc:'A recorded voice', hint:'voicemail transcript', text:
+"Voicemail transcript, caller unknown:\nHello, this message is for Margaret Ellis. This is the fraud department at Amazon. We noticed a charge of $499 for an iPhone ordered from your account. If you did not make this purchase, press 1 now to speak with an agent, or call 1-888-555-0123. Do not hang up and do not tell anyone about this call." },
+      { title:'Voicemail from a clinic', desc:'About Tuesday', hint:'voicemail transcript', text:
+"Voicemail transcript, from 217-555-0144:\nHi, this is Central Illinois Family Clinic. This message is for Margaret Ellis. We are calling about your appointment on Tuesday, October 13 at 10:30 AM with Dr. Patel. If you need to reschedule, please call us at 217-555-0144 during office hours. Thank you." }
+    ]},
+    { name:'Bills and utilities', items:[
+      { title:'Electric bill', desc:'Monthly bill in the mail', hint:'utility bill', text:
+"Prairie Electric Cooperative\nMonthly bill\n\nAccount number: 7700-3341\nService address: 412 Oak Lane\nBilling period: Aug 28 to Sept 27\nUsage: 612 kWh\nCurrent charges: $98.40\nPrevious balance: $0.00\nTotal due: $98.40\nDue date: October 20, 2026\n\nPay online, by mail, or at our office. Questions? Call the number on your bill." },
+      { title:'Shut-off notice', desc:'Says power will be cut', hint:'notice that claims to be from a utility company', text:
+"FINAL NOTICE from Prairie Electric. Your power will be shut off in 1 hour for an unpaid balance of $412.60. Pay now with prepaid gift cards or a cash app to the number below. Call 1-855-555-0190 immediately. Do not call the regular office; they cannot help." }
+    ]}
+  ];
+
+  function redact(text){
+    var found = {};
+    function count(label){ found[label] = (found[label] || 0) + 1; }
+    var t = text;
+    var rules = [
+      ['Social Security number', /\b\d{3}-\d{2}-\d{4}\b/g, function(){ count('Social Security number'); return '[HIDDEN NUMBER]'; }],
+      ['ID or account number', /(\b(?:Member ID|Member number|Account number|Account|Policy number|Policy|Case ID)\s*:?\s*)((?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{5,})/gi, function(m,a){ count('ID or account number'); return a + '[HIDDEN NUMBER]'; }],
+      ['Date of birth', /(\b(?:Date of birth|DOB)\s*:?\s*)(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, function(m,a){ count('Date of birth'); return a + '[HIDDEN DATE]'; }],
+      ['Home address', /^\s*\d{1,6}\s+[A-Za-z0-9 .]+\s(?:St|Street|Ave|Avenue|Rd|Road|Dr|Drive|Ln|Lane|Blvd|Way|Ct)\b.*$/gim, function(){ count('Home address'); return '[HIDDEN ADDRESS]'; }],
+      ['City and ZIP', /^\s*[A-Z][A-Za-z .]+,?\s+[A-Z]{2}\s+\d{5}(?:-\d{4})?\s*$/gm, function(){ count('City and ZIP'); return '[HIDDEN ADDRESS]'; }],
+      ['Email address', /[\w.+-]+@[\w-]+\.[\w.]+/g, function(){ count('Email address'); return '[HIDDEN EMAIL]'; }],
+      ['Name', /(\bDear\s+)((?:Mr\.|Mrs\.|Ms\.|Dr\.)?\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)(?=[,:\n])/g, function(m,a){ count('Name'); return a + '[HIDDEN NAME]'; }],
+      ['Name', /^((?:Patient|Member|Name|Account holder|Customer)\s*:\s*)(.+)$/gim, function(m,a){ count('Name'); return a + '[HIDDEN NAME]'; }]
+      ,['Card or account number', /\b(?:\d[ -]?){13,16}\b/g, function(){ count('Card or account number'); return '[HIDDEN NUMBER]'; }],
+      ['Home address', /((?:Service address|Mailing address|Address)\s*:\s*)(.+)$/gim, function(m,a){ count('Home address'); return a + '[HIDDEN ADDRESS]'; }],
+      ['Name', /(\bmessage is for\s+)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g, function(m,a){ count('Name'); return a + '[HIDDEN NAME]'; }],
+      ['Name', /(\b(?:Hi|Hello)\s+)([A-Z][a-z]+)(?=,)/g, function(m,a){ count('Name'); return a + '[HIDDEN NAME]'; }]
+    ];
+    rules.forEach(function(r){ t = t.replace(r[1], r[2]); });
+    return { text:t, found:found };
+  }
+
+  function api(url, body, signal){
+    return fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body), signal:signal }).then(function(r){
+      if (!r.ok){
+        var err = new Error('http ' + r.status);
+        err.key = r.status === 429 ? 'err_rate' : (r.status === 400 || r.status === 413) ? 'err_image' : 'err_upstream';
+        throw err;
+      }
+      return r.json();
+    });
+  }
+
+  function analyze(opts){
+    if (!sample){ say(t('err_noclaude')); return; }
+    say('');
+    stopSpeaking();
+    lastRun = opts;
+    ctl = new AbortController();
+    show('busy');
+    var payload = { text:opts.text || '', images:opts.images || [], hint:opts.hint || '', lang:{ code:lang.code, en:lang.en, native:lang.native } };
+    api('/api/analyze', payload, ctl.signal).then(function(data){
+      render(data, opts.meta || {});
+    }).catch(function(e){
+      show('home');
+      if (e && e.name === 'AbortError') return;
+      say(t((e && e.key) || 'err_upstream'));
+    });
+  }
+  $('#cancelBtn').addEventListener('click', function(){ if (ctl) ctl.abort(); });
+
+  function buildSamples(){
+    var grid = $('#cats'), list = $('#sampleList'), tiles = [];
+    grid.textContent = ''; list.textContent = ''; list.hidden = true;
+    CATS.forEach(function(c, i){
+      var b = el('button','cat');
+      b.type = 'button';
+      b.setAttribute('aria-pressed','false');
+      b.appendChild(document.createTextNode(t('cat' + i)));
+      b.appendChild(el('span', null, t('nExamples').replace('{n}', c.items.length)));
+      b.addEventListener('click', function(){
+        tiles.forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+        b.setAttribute('aria-pressed','true');
+        list.textContent = '';
+        c.items.forEach(function(s){
+          var sb = el('button','sample');
+          sb.type = 'button';
+          sb.appendChild(el('b', null, s.title));
+          sb.appendChild(el('span', null, s.desc));
+          sb.addEventListener('click', function(){
+            var r = redact(s.text);
+            analyze({ text:r.text, hint:s.hint, meta:{ cleaned:r } });
+          });
+          list.appendChild(sb);
+        });
+        list.hidden = false;
+        if (list.scrollIntoView) list.scrollIntoView({ block:'nearest' });
+      });
+      tiles.push(b);
+      grid.appendChild(b);
+    });
+  }
+
+  var camInput = $('#camInput'), upInput = $('#upInput');
+  var camBtn = $('#camBtn'), upBtn = $('#upBtn');
+  [[camBtn, camInput],[upBtn, upInput]].forEach(function(p){
+    p[0].addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); p[1].click(); }
+    });
+  });
+  [camBtn, upBtn].forEach(function(b){
+    b.addEventListener('click', function(e){
+      if (!sample || (limitsKnown && !imagesOk)){
+        e.preventDefault();
+        say(sample ? t('err_nophotos') : t('err_noclaude'));
+      }
+    });
+  });
+  function loadImg(file){
+    return new Promise(function(resolve, reject){
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function(){ resolve(im); };
+      im.onerror = reject;
+      im.src = u;
+    });
+  }
+  function toPayload(file){
+    var load = window.createImageBitmap ? createImageBitmap(file, { imageOrientation:'from-image' }) : loadImg(file);
+    return load.then(function(bmp){
+      var w = bmp.width || bmp.naturalWidth, h = bmp.height || bmp.naturalHeight;
+      var k = Math.min(1, 1400 / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      return { media_type:'image/jpeg', data:c.toDataURL('image/jpeg', 0.8).split(',')[1] };
+    });
+  }
+  function handleFiles(list){
+    var arr = Array.prototype.slice.call(list || []).filter(function(f){ return /^image\//.test(f.type); });
+    if (!arr.length){ say(t('err_choosePhoto')); return; }
+    arr = arr.slice(0, maxImgs);
+    Promise.all(arr.map(toPayload)).then(function(images){
+      analyze({ images:images, meta:{ photo:true } });
+    }).catch(function(){ say(t('err_image')); });
+  }
+  camInput.addEventListener('change', function(){ handleFiles(camInput.files); camInput.value = ''; });
+  upInput.addEventListener('change', function(){ handleFiles(upInput.files); upInput.value = ''; });
+  var homeEl = views.home;
+  ['dragenter','dragover'].forEach(function(ev){
+    document.addEventListener(ev, function(e){ if (homeEl.hidden) return; e.preventDefault(); homeEl.classList.add('drop'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    document.addEventListener(ev, function(e){ e.preventDefault(); homeEl.classList.remove('drop'); });
+  });
+  document.addEventListener('drop', function(e){
+    if (homeEl.hidden || !imagesOk) return;
+    handleFiles(e.dataTransfer && e.dataTransfer.files);
+  });
+  if (window.matchMedia && !window.matchMedia('(pointer:coarse)').matches){
+    camBtn.hidden = true;
+    upBtn.classList.remove('alt');
+  }
+
+  $('#pasteBtn').addEventListener('click', function(){
+    if (!sample){ say(t('err_noclaude')); return; }
+    say(''); $('#pasteErr').hidden = true; show('paste');
+  });
+  $('#pasteBox').addEventListener('input', function(){ $('#pasteErr').hidden = true; });
+  $('#pasteGo').addEventListener('click', function(){
+    var v = $('#pasteBox').value.trim();
+    if (!v){ $('#pasteErr').hidden = false; return; }
+    var r = redact(v);
+    analyze({ text:r.text, hint:'', meta:{ cleaned:r } });
+  });
+  $('#pasteBack').addEventListener('click', function(){ show('home'); });
+
+  function stopSpeaking(){
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    speaking = false;
+    var b = $('#readBtn'); if (b) b.textContent = t('read');
+  }
+
+  function render(d, meta){
+    d = d || {};
+    var body = $('#resultBody');
+    body.textContent = '';
+    var verdict = ['real','careful','scam'].indexOf(d.verdict) >= 0 ? d.verdict : 'careful';
+    var readable = d.readable !== false;
+    if (!readable) verdict = 'careful';
+    var symbols = { real:'\u2713', careful:'!', scam:'\u2715' };
+    var vlabel = t('v_' + verdict);
+
+    if (d.kind_label) body.appendChild(el('p','kind', t('kindPre') + ' ' + String(d.kind_label)));
+    var v = el('div','verdict ' + verdict);
+    var badge = el('div','badge'); badge.setAttribute('aria-hidden','true');
+    badge.appendChild(el('span', null, symbols[verdict]));
+    var vt = el('div');
+    var h = el('h2', null, vlabel);
+    h.tabIndex = -1; h.setAttribute('data-focus','');
+    vt.appendChild(h);
+    vt.appendChild(el('p', null, readable ? String(d.headline || '') : t('cantRead')));
+    v.appendChild(badge); v.appendChild(vt);
+    body.appendChild(v);
+
+    var spoken = [vlabel + '.'];
+
+    if (!readable){
+      var c0 = el('div','card');
+      c0.appendChild(el('p', null, t('retakeTip')));
+      body.appendChild(c0);
+    } else {
+      if (d.what_it_is){
+        var c1 = el('div','card');
+        c1.appendChild(el('h3', null, t('whatIs')));
+        c1.appendChild(el('p', null, String(d.what_it_is)));
+        body.appendChild(c1);
+        spoken.push(String(d.what_it_is));
+      }
+      if (d.action_summary){
+        var c2 = el('div','card');
+        c2.appendChild(el('h3', null, t('doIAct')));
+        var yn = d.action_needed ? t('yes') : t('no');
+        c2.appendChild(el('p', null, yn + ' ' + String(d.action_summary)));
+        if (d.deadline) c2.appendChild(el('p','deadline', t('timeFrame') + ' ' + String(d.deadline)));
+        body.appendChild(c2);
+        spoken.push(yn + ' ' + String(d.action_summary));
+      }
+      if (Array.isArray(d.reasons) && d.reasons.length){
+        var c3 = el('div','card');
+        c3.appendChild(el('h3', null, t('why')));
+        var ul = el('ul');
+        d.reasons.slice(0,4).forEach(function(r){ ul.appendChild(el('li', null, String(r))); });
+        c3.appendChild(ul);
+        body.appendChild(c3);
+      }
+      if (d.safe_step){
+        var c4 = el('div','card');
+        c4.appendChild(el('h3', null, t('safeStep')));
+        c4.appendChild(el('p', null, String(d.safe_step)));
+        body.appendChild(c4);
+        spoken.push(String(d.safe_step));
+      }
+      if (d.confidence === 'low'){
+        body.appendChild(el('div','msg', t('lowConf')));
+      }
+    }
+
+    var actions = el('div','actions');
+    if (readable && 'speechSynthesis' in window){
+      var rb = el('button','btn', t('read'));
+      rb.type = 'button'; rb.id = 'readBtn';
+      rb.addEventListener('click', function(){
+        if (speaking){ stopSpeaking(); return; }
+        var u = new SpeechSynthesisUtterance(spoken.join(' '));
+        u.rate = 0.9; u.lang = lang.tts;
+        u.onend = function(){ speaking = false; rb.textContent = t('read'); };
+        speaking = true; rb.textContent = t('stopRead');
+        window.speechSynthesis.speak(u);
+      });
+      actions.appendChild(rb);
+    }
+    if (readable && d.family_message){
+      var fc = el('div','card');
+      fc.appendChild(el('h3', null, t('askTrust')));
+      var ta = el('textarea');
+      ta.dir = 'auto';
+      var msgMine = String(d.family_message);
+      var msgEn = d.family_message_en ? String(d.family_message_en) : '';
+      ta.value = msgMine;
+      ta.setAttribute('aria-label', t('askTrust'));
+      if (msgEn && lang.code !== 'en'){
+        var seg = el('div','seg');
+        var b1 = el('button', null, t('myLang')), b2 = el('button', null, t('english'));
+        b1.type = 'button'; b2.type = 'button';
+        b1.setAttribute('aria-pressed','true'); b2.setAttribute('aria-pressed','false');
+        function pick(which){
+          ta.value = which === 1 ? msgMine : msgEn;
+          b1.setAttribute('aria-pressed', which === 1 ? 'true' : 'false');
+          b2.setAttribute('aria-pressed', which === 2 ? 'true' : 'false');
+          sms.href = 'sms:?&body=' + encodeURIComponent(ta.value);
+        }
+        b1.addEventListener('click', function(){ pick(1); });
+        b2.addEventListener('click', function(){ pick(2); });
+        seg.appendChild(b1); seg.appendChild(b2);
+        fc.appendChild(seg);
+      }
+      fc.appendChild(ta);
+      var row = el('div','row');
+      var sms = el('a','btn alt', t('textIt'));
+      sms.href = 'sms:?&body=' + encodeURIComponent(ta.value);
+      ta.addEventListener('input', function(){ sms.href = 'sms:?&body=' + encodeURIComponent(ta.value); });
+      var cp = el('button','btn alt', t('copy'));
+      cp.type = 'button';
+      cp.addEventListener('click', function(){
+        function done(){ cp.textContent = t('copied'); setTimeout(function(){ cp.textContent = t('copy'); }, 1800); }
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(ta.value).then(done, function(){ ta.select(); try{ document.execCommand('copy'); done(); }catch(e){} });
+        } else { ta.select(); try{ document.execCommand('copy'); done(); }catch(e){} }
+      });
+      row.appendChild(sms); row.appendChild(cp);
+      fc.appendChild(row);
+      body.appendChild(fc);
+    }
+    var again = el('button','btn alt', readable ? t('again') : t('tryAgain'));
+    again.type = 'button';
+    again.addEventListener('click', function(){ stopSpeaking(); show('home'); });
+    actions.appendChild(again);
+    body.appendChild(actions);
+
+    if (readable && lang.code !== 'en' && d.full_translation){
+      var dt = el('details');
+      dt.appendChild(el('summary', null, t('fullTr')));
+      dt.appendChild(el('p','trtext', String(d.full_translation)));
+      body.appendChild(dt);
+    }
+    if (meta.cleaned){
+      var det = el('details');
+      det.appendChild(el('summary', null, t('hidden')));
+      var chips = el('div','chips');
+      var keys = Object.keys(meta.cleaned.found);
+      if (!keys.length) chips.appendChild(el('span','chip', t('nothingHidden')));
+      keys.forEach(function(k){
+        var n = meta.cleaned.found[k];
+        chips.appendChild(el('span','chip', k + (n > 1 ? ' (' + n + ')' : '')));
+      });
+      det.appendChild(chips);
+      det.appendChild(el('pre', null, meta.cleaned.text));
+      body.appendChild(det);
+    }
+    if (meta.photo){
+      body.appendChild(el('p','fine', t('photoNote')));
+    }
+    show('result');
+  }
+
+  var storedLang = 'en';
+  try { storedLang = localStorage.getItem('plainly-lang') || 'en'; } catch(e){}
+  applyI18n();
+
+  (function init(){
+    sample = { ok:true };
+    limitsKnown = true; imagesOk = true; maxImgs = 3;
+    if (storedLang !== 'en') setLang(storedLang, true);
+    else sel.value = 'en';
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "plainly",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Plain-language explainer for letters, texts, and voicemails, with scam checks and translation.",
+  "scripts": {
+    "dev": "node --env-file=.env server.js",
+    "mock": "MOCK=1 node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "express": "^4.19.2"
+  },
+  "engines": { "node": ">=20" }
+}
