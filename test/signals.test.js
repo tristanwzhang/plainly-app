@@ -422,3 +422,39 @@ test('a real claim is still recognised in its usual shapes', () => {
     assert.ok(analyzeSignals(text).claimed.includes(org), `missed the claim in: ${text}`);
   }
 });
+
+// -------------------- the money warning must survive a missing sender line
+
+test('a payment link to an unnamed party is flagged without a sender line', () => {
+  // OCR of a screenshot usually drops the small grey "<name@domain>" line, and
+  // the sender-based rule then had nothing to compare against, so the email
+  // came back clean. The message's own words are the fallback: a real bill from
+  // ComEd says "ComEd" and links to comed.com.
+  const noSender = [
+    'Balance Update - Tristan Zhang at Seven07',
+    'Hunter C',
+    'I manage rent payments at Seven07. Please pay your first rent installment today.',
+    'Submit your payment via https://r.eliseai.com/payment/1cc93322.',
+  ].join('\n');
+  const r = analyzeSignals(noSender);
+  assert.equal(r.verdict, 'careful');
+  assert.ok(r.signals.some((s) => s.id === 'pay_unknown_link'));
+});
+
+test('the fallback still works through browser chrome in the photo', () => {
+  const shot = 'Netflix Inbox Instagram My Drive - Google... Disney+\nGmail\n'
+    + 'Hunter C\nI manage rent payments at Seven07. Please pay your first rent installment today.\n'
+    + 'Submit your payment via https://r.eliseai.com/payment/1cc93322.';
+  const r = analyzeSignals(shot);
+  assert.equal(r.verdict, 'careful');
+  assert.deepEqual(r.claimed, [], 'bookmarks are still not senders');
+});
+
+test('paying a company the message actually names is not flagged', () => {
+  for (const t of [
+    'ComEd: your bill of $112.45 is due Oct 20. Pay online at https://www.comed.com/pay',
+    'Your Amazon order shipped. Pay the balance at https://www.amazon.com/payments',
+  ]) {
+    assert.equal(analyzeSignals(t).verdict, 'real', `flagged: ${t}`);
+  }
+});
