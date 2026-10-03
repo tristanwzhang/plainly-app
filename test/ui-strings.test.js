@@ -83,3 +83,44 @@ test('an unknown language returns English rather than blanks', () => {
   const out = staticStrings('xx', { check: 'Check it', back: 'Back' });
   assert.deepEqual(out, { check: 'Check it', back: 'Back' });
 });
+
+// --------------------------------------------------- the endpoint's caching
+
+/** Minimal fake req/res so the handler can be driven without a server. */
+function call(handler, body) {
+  return new Promise((resolve) => {
+    const res = {
+      setHeader() {},
+      status(code) { this.code = code; return this; },
+      json(payload) { resolve({ code: this.code, body: payload }); return this; },
+    };
+    handler({ method: 'POST', headers: {}, socket: {}, body }, res);
+  });
+}
+
+test('a cached language is not served to a request wanting more keys', async () => {
+  // Regression: the cache was keyed on language alone, so an early request for
+  // two keys left every later caller falling back to English for the rest.
+  // In the browser that looked like a half-translated page.
+  process.env.MOCK = '1';
+  const { default: handler } = await import('../api/translate-ui.js?cachebust=' + Date.now());
+  const lang = { code: 'es', en: 'Spanish', native: 'Espanol' };
+
+  const few = await call(handler, { lang, strings: { check: 'Check it', back: 'Back' } });
+  assert.equal(Object.keys(few.body).length, 2);
+
+  const many = await call(handler, {
+    lang,
+    strings: { check: 'Check it', back: 'Back', upload: 'Upload a photo', paste: 'Paste a text', whatIs: 'What this is' },
+  });
+  assert.equal(Object.keys(many.body).length, 5, 'every requested key must come back');
+  assert.equal(many.body.upload, 'Subir una foto', 'the extra keys must be translated, not English');
+  assert.equal(many.body.whatIs, 'Qué es esto');
+});
+
+test('English is returned untouched without consulting the cache', async () => {
+  process.env.MOCK = '1';
+  const { default: handler } = await import('../api/translate-ui.js?cachebust=' + Date.now());
+  const out = await call(handler, { lang: { code: 'en', en: 'English', native: 'English' }, strings: { check: 'Check it' } });
+  assert.deepEqual(out.body, { check: 'Check it' });
+});

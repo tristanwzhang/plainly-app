@@ -3,6 +3,12 @@ import { hasStatic, staticStrings } from '../data/ui-strings.js';
 
 const cache = new Map(); // language code -> translated strings (best effort, per instance)
 
+// Merge rather than replace, so a request for a few keys can only add coverage
+// for a language and never shrink what a later, larger request can reuse.
+function remember(code, obj) {
+  cache.set(code, { ...(cache.get(code) || {}), ...obj });
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
@@ -16,13 +22,22 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'bad_strings' });
   }
   if (lang.code === 'en') return res.status(200).json(strings);
-  if (cache.has(lang.code)) return res.status(200).json(cache.get(lang.code));
+
+  // The cache is per language, so a cached entry may have been built for a
+  // smaller set of keys than this caller wants. Serving it anyway leaves the
+  // caller to fall back to English for everything missing, which showed up as
+  // a half-translated screen. Only reuse an entry that covers every key asked
+  // for; instances are shared, so one odd request must not degrade the rest.
+  const cached = cache.get(lang.code);
+  if (cached && keys.every((k) => typeof cached[k] === 'string' && cached[k].length)) {
+    return res.status(200).json(Object.fromEntries(keys.map((k) => [k, cached[k]])));
+  }
 
   // Shipped translations win: instant, free, and they work with no key, in mock
   // mode and offline. The model is only for a language we have not covered yet.
   if (hasStatic(lang.code, keys)) {
     const out = staticStrings(lang.code, strings);
-    cache.set(lang.code, out);
+    remember(lang.code, out);
     return res.status(200).json(out);
   }
 
@@ -42,7 +57,7 @@ export default async function handler(req, res) {
     const out = msg.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
     const data = parseJson(out);
     if (!data) return res.status(200).json(staticStrings(lang.code, strings));
-    cache.set(lang.code, data);
+    remember(lang.code, data);
     return res.status(200).json(data);
   } catch (e) {
     console.error('translate-ui failed', e?.status || e?.name);
