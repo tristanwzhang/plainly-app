@@ -21,7 +21,7 @@ No key yet? `npm run mock` runs the whole app with canned answers so you can wor
 
 - `public/index.html`: the whole front end (one file). Photos are shrunk and converted to JPEG in the browser. Pasted text and the built-in examples have personal details hidden in the browser before anything is sent.
 - `api/analyze.js`: builds the prompt and calls Claude with the text or photos. Returns JSON that the page renders.
-- `api/translate-ui.js`: translates the interface text into the chosen language (cached per server instance).
+- `api/translate-ui.js`: serves the shipped translations in `data/ui-strings.js` for the 10 non-English languages, instantly and without a model. It only calls the model for a language that is missing or incomplete there, and falls back to the static text (English per missing key) when the model is unavailable.
 - `lib/prompt.js`: the prompt, including the scam signs and the "never tell them to pay or call a number from the message" rule.
 - Models are set in `.env` (`CLAUDE_MODEL`, `CLAUDE_FAST_MODEL`). Check the current model names in the Anthropic docs.
 
@@ -30,7 +30,7 @@ No key yet? `npm run mock` runs the whole app with canned answers so you can wor
 `lib/signals.js` scores an item for scam signals using only local rules: no
 network, no key, no cost. It runs instantly and keeps working offline.
 
-    npm test                  # 43 tests
+    npm test                  # 51 tests
     npm run check -- --examples
     npm run check -- "paste a suspicious text here"
 
@@ -72,7 +72,8 @@ there tells someone a real letter is fake, which is the costlier mistake.
 - The offline rules read a claimed sender out of prose, so an incidental brand mention is misread as the sender ("Google Play cards" makes it say the message claims to be from Google). Cosmetic today; worth narrowing before real users.
 - Photos are still not covered by the offline rules, because the images are never read as text. Browser OCR would fix this and redact the photos at the same time.
 - Redaction runs before the rules see the text, and it can erase a signal: "Dear Valued Customer" becomes "Dear [HIDDEN NAME]", so the generic-greeting rule stops firing. Running the rules in the browser on the original text, before redaction, would fix this. `test/examples.test.js` covers the built-in examples both ways so a regression shows up.
-- Translations have not been checked by native speakers.
+- The interface translations in `data/ui-strings.js` are machine translations and have NOT been checked by native speakers. The audience reads little English, so a clumsy phrase is a real cost. Have someone who speaks each language read their column and fix it there.
+- Translating the letter itself (`full_translation`) still needs the model. Only the interface works offline.
 - Add a short terms-of-use and a first-use notice before real users upload anything.
 
 ## Privacy notes
