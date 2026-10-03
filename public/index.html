@@ -125,11 +125,20 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
       <p class="lead" data-i18n="lead">Got a letter, text, or voicemail you're not sure about? Plainly tells you what it is, whether it's real, and what to do.</p>
 
       <div class="pick" id="pick">
-        <button class="btn big" id="pasteBtn" type="button">
+        <label class="btn big" id="camBtn" for="camInput" tabindex="0" role="button">
+          <span data-i18n="takePhoto">Take a photo of your letter</span>
+          <small data-i18n="takePhotoSub">Opens your camera</small>
+        </label>
+        <label class="btn big alt" id="upBtn" for="upInput" tabindex="0" role="button">
+          <span data-i18n="upload">Upload a photo</span>
+          <small data-i18n="uploadSub">Choose from your phone or computer, or drop it here</small>
+        </label>
+        <button class="btn alt" id="pasteBtn" type="button">
           <span data-i18n="paste">Paste a text, email, or voicemail</span>
-          <small data-i18n="pasteSub">Copy the message, then paste it here</small>
         </button>
       </div>
+      <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+      <input type="file" id="upInput" accept="image/*" multiple hidden>
 
       <p class="or" id="orLabel" data-i18n="pickKind">Not sure what to try? Pick a kind of message.</p>
       <div class="cats" id="cats"></div>
@@ -150,8 +159,8 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
 
     <section id="busy" hidden aria-live="polite">
       <div class="busy">
-        <h2 tabindex="-1" data-focus data-i18n="busyTitle">Reading your letter</h2>
-        <p data-i18n="busySub">This takes about 20 seconds.</p>
+        <h2 tabindex="-1" data-focus id="busyTitle" data-i18n="busyTitle">Reading your letter</h2>
+        <p id="busySub" data-i18n="busySub">This takes about 20 seconds.</p>
         <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
         <button class="btn alt" id="cancelBtn" type="button" data-i18n="cancel">Cancel</button>
       </div>
@@ -175,7 +184,18 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
   var STR = {
     larger:"Larger text", smaller:"Smaller text",
     lead:"Got a letter, text, or voicemail you're not sure about? Plainly tells you what it is, whether it's real, and what to do.",
+    takePhoto:"Take a photo of your letter", takePhotoSub:"Opens your camera",
+    upload:"Upload a photo", uploadSub:"Choose from your phone or computer, or drop it here",
     paste:"Paste a text, email, or voicemail", pasteSub:"Copy the message, then paste it here",
+    cantRead:"I couldn't read this photo.",
+    retakeTip:"Try again in good light. Keep the whole page in view and hold the camera still.",
+    ocrBusy:"Reading the words in your photo\u2026",
+    ocrFirst:"First time only: this downloads a reader (about 5 MB).",
+    ocrNone:"I could not find any words in that photo. Try again in good light with the whole page in view.",
+    ocrOffline:"The photo reader could not load. Check your connection, or paste the text instead.",
+    photoNote2:"The photo stayed on your device. Only the words were checked.",
+    err_choosePhoto:"Please choose a photo (a JPG or PNG picture).",
+    err_nophotos:"Photos are not working right now. Try an example below.",
     pickKind:"Not sure what to try? Pick a kind of message.",
     cat0:"Health and insurance", cat1:"Bank and cards", cat2:"Government and benefits",
     cat3:"Texts and emails", cat4:"Voicemails", cat5:"Bills and utilities",
@@ -478,10 +498,115 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
     });
   }
 
-  // Photo input was removed. Reading a letter from a photograph needs a model
-  // to look at the image, and this build runs without an API key, so the
-  // buttons could only ever return an error. The server still accepts images,
-  // so restoring this means putting the buttons back and setting the key.
+  // ---- Photos: read on this device, never uploaded -------------------------
+  //
+  // Tesseract runs as WebAssembly in the browser, so the image itself never
+  // leaves the phone. Only the words come out, and they go through the same
+  // redaction as pasted text before anything is sent. That is a stronger
+  // privacy position than the old version, which uploaded the raw photograph.
+  //
+  // The engine is about 5 MB, so it is fetched on first use only, never on
+  // page load. Someone who only ever pastes text pays nothing for it.
+
+  var TESS_JS = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+  var tessReady = null;
+
+  function loadTesseract(){
+    if (tessReady) return tessReady;
+    tessReady = new Promise(function(resolve, reject){
+      if (window.Tesseract) return resolve(window.Tesseract);
+      var sc = document.createElement('script');
+      sc.src = TESS_JS;
+      sc.onload = function(){ window.Tesseract ? resolve(window.Tesseract) : reject(new Error('no Tesseract')); };
+      sc.onerror = function(){ reject(new Error('script blocked')); };
+      document.head.appendChild(sc);
+    }).catch(function(e){ tessReady = null; throw e; }); // let a later try re-fetch
+    return tessReady;
+  }
+
+  function loadImg(file){
+    return new Promise(function(resolve, reject){
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function(){ resolve(im); };
+      im.onerror = reject;
+      im.src = u;
+    });
+  }
+
+  // Downscale before OCR: full-resolution phone photos are far larger than the
+  // engine needs and make it much slower on an old device.
+  function toCanvas(file){
+    var load = window.createImageBitmap ? createImageBitmap(file, { imageOrientation:'from-image' }) : loadImg(file);
+    return load.then(function(bmp){
+      var w = bmp.width || bmp.naturalWidth, h = bmp.height || bmp.naturalHeight;
+      var k = Math.min(1, 1800 / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      return c;
+    });
+  }
+
+  function readPhotos(files){
+    var arr = Array.prototype.slice.call(files || []).filter(function(f){ return /^image\//.test(f.type); });
+    if (!arr.length){ say(t('err_choosePhoto')); return; }
+    arr = arr.slice(0, 3);
+
+    show('busy');
+    $('#busyTitle').textContent = t('ocrBusy');
+    $('#busySub').textContent = window.Tesseract ? '' : t('ocrFirst');
+
+    loadTesseract().then(function(T){
+      return Promise.all(arr.map(toCanvas)).then(function(canvases){
+        return T.createWorker('eng').then(function(worker){
+          var texts = [];
+          // One page at a time: parallel workers each load their own copy of
+          // the engine, which an older phone will not survive.
+          return canvases.reduce(function(chain, c){
+            return chain.then(function(){
+              return worker.recognize(c).then(function(r){ texts.push(r.data.text || ''); });
+            });
+          }, Promise.resolve()).then(function(){
+            return worker.terminate().then(function(){ return texts.join('\n\n'); });
+          });
+        });
+      });
+    }).then(function(text){
+      var clean = String(text || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+      if (clean.length < 12){ show('home'); say(t('ocrNone')); return; }
+      var r = redact(clean);
+      analyze({ text:r.text, hint:'letter read from a photo', meta:{ cleaned:r, fromPhoto:true } });
+    }).catch(function(){
+      show('home');
+      say(t('ocrOffline'));
+    });
+  }
+
+  var camInput = $('#camInput'), upInput = $('#upInput');
+  var camBtn = $('#camBtn'), upBtn = $('#upBtn');
+  [[camBtn, camInput],[upBtn, upInput]].forEach(function(p){
+    p[0].addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); p[1].click(); }
+    });
+  });
+  camInput.addEventListener('change', function(){ readPhotos(camInput.files); camInput.value = ''; });
+  upInput.addEventListener('change', function(){ readPhotos(upInput.files); upInput.value = ''; });
+
+  var homeEl = views.home;
+  ['dragenter','dragover'].forEach(function(ev){
+    document.addEventListener(ev, function(e){ if (homeEl.hidden) return; e.preventDefault(); homeEl.classList.add('drop'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    document.addEventListener(ev, function(e){ e.preventDefault(); homeEl.classList.remove('drop'); });
+  });
+  document.addEventListener('drop', function(e){
+    if (homeEl.hidden) return;
+    readPhotos(e.dataTransfer && e.dataTransfer.files);
+  });
+  if (window.matchMedia && !window.matchMedia('(pointer:coarse)').matches){
+    camBtn.hidden = true;
+    upBtn.classList.remove('alt');
+  }
 
   $('#pasteBtn').addEventListener('click', function(){
     if (!sample){ say(t('err_noclaude')); return; }
@@ -630,6 +755,9 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
       dt.appendChild(el('summary', null, t('fullTr')));
       dt.appendChild(el('p','trtext', String(d.full_translation)));
       body.appendChild(dt);
+    }
+    if (meta.fromPhoto){
+      body.appendChild(el('p','fine', t('photoNote2')));
     }
     if (meta.cleaned){
       var det = el('details');

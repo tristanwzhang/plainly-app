@@ -19,7 +19,8 @@ No key yet? `npm run mock` runs the whole app with canned answers so you can wor
 
 ## How it works
 
-- `public/index.html`: the whole front end (one file). Pasted text and the built-in examples have personal details hidden in the browser before anything is sent. Photo input was removed: reading a letter from a photograph needs a model, and this build runs with no API key, so the buttons could only ever return an error. The server still accepts images, so restoring it means putting the buttons back and setting a key.
+- `public/index.html`: the whole front end (one file). Pasted text and the built-in examples have personal details hidden in the browser before anything is sent.
+- Photos are read **on the device**. Tesseract.js runs as WebAssembly in the browser, pulls the words out of the picture, and those words go through the same redaction as pasted text. The image itself is never uploaded. The engine is about 5 MB and is fetched from a CDN on first use only, so anyone who just pastes text never downloads it. English text only; other scripts need their own data file.
 - `api/analyze.js`: builds the prompt and calls Claude with the text or photos. Returns JSON that the page renders.
 - `api/translate-ui.js`: serves the shipped translations in `data/ui-strings.js` for the 10 non-English languages, instantly and without a model. It only calls the model for a language that is missing or incomplete there, and falls back to the static text (English per missing key) when the model is unavailable.
 - `lib/prompt.js`: the prompt, including the scam signs and the "never tell them to pay or call a number from the message" rule.
@@ -66,7 +67,8 @@ there tells someone a real letter is fake, which is the costlier mistake.
 
 ## Known gaps (good roadmap slides)
 
-- Photo input is gone from the UI (see above). If it comes back, it still needs OCR in the browser so personal details are hidden before anything is sent.
+- OCR quality depends on the photo. Flat, well-lit, printed text reads reliably; handwriting, glare and crumpled paper do not. The app says so and asks for a retake rather than guessing.
+- The OCR engine comes from a CDN, which is the app's only external dependency. If it cannot load, the photo buttons fail with a clear message and pasting still works.
 - Voicemail works as pasted transcripts only. Real audio needs speech-to-text on the server.
 - Rate limiting is a best-effort speed bump. Use a shared store (for example Upstash Redis) before real users.
 - Neither the prompt nor the offline rules have been measured for accuracy. Build a set of 30 to 50 labeled real and fake messages and track how often the verdict is right.
