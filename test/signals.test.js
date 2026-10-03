@@ -188,7 +188,7 @@ test('kind labels follow the obvious cues', () => {
   assert.equal(guessKind('anything', 'voicemail transcript'), 'voicemail');
   assert.equal(guessKind('Dear Mr. Smith,\n\nlong body text here.\n\nSincerely,\nThe Office'), 'letter');
   assert.equal(analyzeSignals('Amount due: $42.10.').kindLabel, 'Bill');
-  assert.equal(analyzeSignals('Amount due: $42.10.', { lang: 'es' }).kindLabel, 'factura');
+  assert.equal(analyzeSignals('Amount due: $42.10.', { lang: 'es' }).kindLabel, 'una factura');
 });
 
 test('toSchema writes an honest headline and summary without a model', () => {

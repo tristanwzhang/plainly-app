@@ -108,7 +108,7 @@ export const MESSAGES = {
     head_none: 'No encontramos señales conocidas de estafa.',
     head_one: 'Hay algo aquí que conviene mirar de cerca.',
     head_many: 'Varias cosas aquí coinciden con estafas conocidas.',
-    what_kind: 'Esto es un {kind}.',
+    what_kind: 'Esto es {kind}.',
     what_from: ' Dice que es de {org}.',
     what_none: ' Lo revisamos con señales conocidas de estafa y no encontramos ninguna. Eso no quiere decir que sea real.',
     what_one: ' Lo revisamos con señales conocidas de estafa y encontramos una.',
@@ -516,7 +516,7 @@ export const MESSAGES = {
     head_none: 'Nous n’avons trouvé aucun signe connu d’arnaque.',
     head_one: 'Il y a ici une chose qui mérite un second regard.',
     head_many: 'Plusieurs éléments correspondent à des arnaques connues.',
-    what_kind: 'Ceci est un {kind}.',
+    what_kind: 'Ceci est {kind}.',
     what_from: ' Il dit venir de {org}.',
     what_none: ' Nous l’avons comparé à des signes d’arnaque connus et n’en avons trouvé aucun. Cela ne veut pas dire que c’est authentique.',
     what_one: ' Nous l’avons comparé à des signes d’arnaque connus et en avons trouvé un.',
@@ -567,7 +567,7 @@ export const MESSAGES = {
     head_none: 'Não encontramos sinais conhecidos de golpe.',
     head_one: 'Há uma coisa aqui que merece um olhar mais atento.',
     head_many: 'Várias coisas aqui combinam com golpes conhecidos.',
-    what_kind: 'Isto é um {kind}.',
+    what_kind: 'Isto é {kind}.',
     what_from: ' Diz que é da {org}.',
     what_none: ' Comparamos com sinais conhecidos de golpe e não encontramos nenhum. Isso não quer dizer que seja verdadeiro.',
     what_one: ' Comparamos com sinais conhecidos de golpe e encontramos um.',
@@ -588,7 +588,7 @@ export const MESSAGES = {
 // words appear both as a label of their own and inside the `what_kind` sentence.
 export const KINDS = {
   en: { letter: 'Letter', bill: 'Bill', text: 'Text message', email: 'Email', voicemail: 'Voicemail' },
-  es: { letter: 'carta', bill: 'factura', text: 'mensaje de texto', email: 'correo electrónico', voicemail: 'correo de voz' },
+  es: { letter: 'una carta', bill: 'una factura', text: 'un mensaje de texto', email: 'un correo electrónico', voicemail: 'un correo de voz' },
   zh: { letter: '信件', bill: '账单', text: '短信', email: '电子邮件', voicemail: '语音留言' },
   hi: { letter: 'चिट्ठी', bill: 'बिल', text: 'मैसेज', email: 'ईमेल', voicemail: 'वॉइसमेल' },
   ar: { letter: 'خطاب', bill: 'فاتورة', text: 'رسالة نصية', email: 'بريد إلكتروني', voicemail: 'رسالة صوتية' },
@@ -596,8 +596,8 @@ export const KINDS = {
   vi: { letter: 'lá thư', bill: 'hóa đơn', text: 'tin nhắn', email: 'email', voicemail: 'lời nhắn thoại' },
   tl: { letter: 'sulat', bill: 'bill', text: 'text', email: 'email', voicemail: 'voicemail' },
   ru: { letter: 'письмо', bill: 'счёт', text: 'сообщение', email: 'электронное письмо', voicemail: 'голосовое сообщение' },
-  fr: { letter: 'courrier', bill: 'facture', text: 'message', email: 'courriel', voicemail: 'message vocal' },
-  pt: { letter: 'carta', bill: 'conta', text: 'mensagem', email: 'e-mail', voicemail: 'recado de voz' },
+  fr: { letter: 'un courrier', bill: 'une facture', text: 'un message', email: 'un courriel', voicemail: 'un message vocal' },
+  pt: { letter: 'uma carta', bill: 'uma conta', text: 'uma mensagem', email: 'um e-mail', voicemail: 'um recado de voz' },
 };
 
 /** Fill {placeholders}. An unknown placeholder is left as-is rather than blanked. */
