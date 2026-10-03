@@ -30,7 +30,7 @@ No key yet? `npm run mock` runs the whole app with canned answers so you can wor
 `lib/signals.js` scores an item for scam signals using only local rules: no
 network, no key, no cost. It runs instantly and keeps working offline.
 
-    npm test                  # 36 tests
+    npm test                  # 43 tests
     npm run check -- --examples
     npm run check -- "paste a suspicious text here"
 
@@ -71,6 +71,7 @@ there tells someone a real letter is fake, which is the costlier mistake.
 - Neither the prompt nor the offline rules have been measured for accuracy. Build a set of 30 to 50 labeled real and fake messages and track how often the verdict is right.
 - The offline rules read a claimed sender out of prose, so an incidental brand mention is misread as the sender ("Google Play cards" makes it say the message claims to be from Google). Cosmetic today; worth narrowing before real users.
 - Photos are still not covered by the offline rules, because the images are never read as text. Browser OCR would fix this and redact the photos at the same time.
+- Redaction runs before the rules see the text, and it can erase a signal: "Dear Valued Customer" becomes "Dear [HIDDEN NAME]", so the generic-greeting rule stops firing. Running the rules in the browser on the original text, before redaction, would fix this. `test/examples.test.js` covers the built-in examples both ways so a regression shows up.
 - Translations have not been checked by native speakers.
 - Add a short terms-of-use and a first-use notice before real users upload anything.
 
