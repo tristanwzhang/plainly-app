@@ -67,7 +67,7 @@ test('with no model reply the rules carry the answer', () => {
   const rules = analyzeSignals('Buy a gift card to clear your IRS debt.');
   const out = mergeResults(null, rules, { english: true });
   assert.equal(out.verdict, 'scam');
-  assert.equal(out.headline, null, 'only a model can write the headline');
+  assert.ok(out.headline.length > 0, 'the rules supply a headline when no model does');
   assert.equal(out.checked_offline, true);
   assert.ok(out.reasons.length > 0);
 });

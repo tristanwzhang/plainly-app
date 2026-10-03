@@ -187,11 +187,26 @@ test('kind labels follow the obvious cues', () => {
   assert.equal(guessKind('Dear Mr. Smith,\n\nlong body text here.\n\nSincerely,\nThe Office'), 'Letter');
 });
 
-test('toSchema leaves model-only fields null', () => {
+test('toSchema writes an honest headline and summary without a model', () => {
+  // These used to be null, which rendered as a blank line and a missing card.
   const s = toSchema(analyzeSignals('Buy a gift card to settle your IRS debt.'));
-  assert.equal(s.headline, null);
-  assert.equal(s.what_it_is, null);
-  assert.equal(s.full_translation, null);
+  assert.ok(s.headline.length > 0);
+  assert.ok(s.what_it_is.length > 0);
   assert.equal(s.verdict, 'scam');
   assert.ok(s.safe_step.length > 0);
+  // Translating the letter genuinely needs a model, so this one stays null.
+  assert.equal(s.full_translation, null);
+});
+
+test('the summary never claims to have understood the letter', () => {
+  for (const text of ['Buy a gift card to settle your IRS debt.', 'Hi Grandma, dinner is at six.']) {
+    const s = toSchema(analyzeSignals(text));
+    assert.match(s.what_it_is, /did not read what it says/i);
+  }
+});
+
+test('a clean check is not reported as proof the item is genuine', () => {
+  const s = toSchema(analyzeSignals('Hi Grandma, dinner is at six on Sunday.'));
+  assert.match(s.what_it_is, /does not mean it is real/i);
+  assert.ok(!/looks real|is real\b|safe/i.test(s.headline), `headline overclaims: ${s.headline}`);
 });
