@@ -55,9 +55,10 @@ export const MESSAGES = {
     phone_mismatch: 'Says it is from {org}, but the number given is not theirs. {org}’s real number is {phone}.',
 
     head_none: 'We did not find any known scam signs.',
+    head_minor: 'Nothing here matches a known scam.',
     head_one: 'One thing here is worth a closer look.',
     head_many: 'Several things here match known scams.',
-    what_kind: 'This is a {kind}.',
+    what_kind: 'This is {kind}.',
     what_from: ' It says it is from {org}.',
     what_none: ' We checked it against known scam signs and did not find any. That does not mean it is real.',
     what_one: ' We checked it against known scam signs and found one.',
@@ -106,6 +107,7 @@ export const MESSAGES = {
     phone_mismatch: 'Dice que es de {org}, pero el número que da no es suyo. El número real de {org} es {phone}.',
 
     head_none: 'No encontramos señales conocidas de estafa.',
+    head_minor: 'Nada aquí coincide con una estafa conocida.',
     head_one: 'Hay algo aquí que conviene mirar de cerca.',
     head_many: 'Varias cosas aquí coinciden con estafas conocidas.',
     what_kind: 'Esto es {kind}.',
@@ -157,6 +159,7 @@ export const MESSAGES = {
     phone_mismatch: '声称来自 {org}，但给出的号码不是他们的。{org} 的真实号码是 {phone}。',
 
     head_none: '我们没有发现已知的诈骗迹象。',
+    head_minor: '这里没有符合已知诈骗的地方。',
     head_one: '这里有一处值得仔细看看。',
     head_many: '这里有多处符合已知的诈骗手法。',
     what_kind: '这是一份{kind}。',
@@ -208,6 +211,7 @@ export const MESSAGES = {
     phone_mismatch: 'कहता है कि यह {org} से है, पर दिया गया नंबर उनका नहीं है। {org} का असली नंबर {phone} है।',
 
     head_none: 'हमें धोखाधड़ी के कोई ज्ञात संकेत नहीं मिले।',
+    head_minor: 'यहाँ कुछ भी जानी-पहचानी धोखाधड़ी से मेल नहीं खाता।',
     head_one: 'यहाँ एक बात है जिसे ध्यान से देखना चाहिए।',
     head_many: 'यहाँ कई बातें जानी-पहचानी धोखाधड़ी से मेल खाती हैं।',
     what_kind: 'यह एक {kind} है।',
@@ -259,6 +263,7 @@ export const MESSAGES = {
     phone_mismatch: 'يقول إنه من {org}، لكن الرقم المذكور ليس رقمهم. رقم {org} الحقيقي هو {phone}.',
 
     head_none: 'لم نجد أي علامات احتيال معروفة.',
+    head_minor: 'لا شيء هنا يطابق عملية احتيال معروفة.',
     head_one: 'هناك أمر واحد هنا يستحق نظرة أقرب.',
     head_many: 'عدة أمور هنا تطابق عمليات احتيال معروفة.',
     what_kind: 'هذا {kind}.',
@@ -310,6 +315,7 @@ export const MESSAGES = {
     phone_mismatch: '{org}에서 왔다고 하지만, 적힌 번호는 그들의 번호가 아닙니다. {org}의 진짜 번호는 {phone}입니다.',
 
     head_none: '알려진 사기 신호를 찾지 못했습니다.',
+    head_minor: '여기에 알려진 사기와 일치하는 것은 없습니다.',
     head_one: '여기 한 가지는 자세히 볼 만합니다.',
     head_many: '여기 여러 가지가 알려진 사기와 일치합니다.',
     what_kind: '이것은 {kind}입니다.',
@@ -361,6 +367,7 @@ export const MESSAGES = {
     phone_mismatch: 'Nói là từ {org}, nhưng số đưa ra không phải của họ. Số thật của {org} là {phone}.',
 
     head_none: 'Chúng tôi không tìm thấy dấu hiệu lừa đảo nào đã biết.',
+    head_minor: 'Không có điểm nào ở đây khớp với lừa đảo đã biết.',
     head_one: 'Có một điểm ở đây đáng xem kỹ.',
     head_many: 'Nhiều điểm ở đây khớp với các kiểu lừa đảo đã biết.',
     what_kind: 'Đây là một {kind}.',
@@ -412,6 +419,7 @@ export const MESSAGES = {
     phone_mismatch: 'Sinasabing galing sa {org}, pero hindi kanila ang numerong ibinigay. Ang totoong numero ng {org} ay {phone}.',
 
     head_none: 'Wala kaming nakitang kilalang palatandaan ng scam.',
+    head_minor: 'Walang dito ang tugma sa kilalang scam.',
     head_one: 'May isang bagay dito na dapat tingnang mabuti.',
     head_many: 'Maraming bagay dito ang tugma sa kilalang mga scam.',
     what_kind: 'Ito ay isang {kind}.',
@@ -463,6 +471,7 @@ export const MESSAGES = {
     phone_mismatch: 'Говорит, что это от {org}, но указанный номер не их. Настоящий номер {org} — {phone}.',
 
     head_none: 'Мы не нашли известных признаков мошенничества.',
+    head_minor: 'Ничто здесь не совпадает с известной схемой мошенничества.',
     head_one: 'Здесь есть одна вещь, на которую стоит посмотреть внимательнее.',
     head_many: 'Здесь несколько вещей совпадают с известными схемами мошенничества.',
     what_kind: 'Это {kind}.',
@@ -514,6 +523,7 @@ export const MESSAGES = {
     phone_mismatch: 'Dit venir de {org}, mais le numéro donné n’est pas le leur. Le vrai numéro de {org} est {phone}.',
 
     head_none: 'Nous n’avons trouvé aucun signe connu d’arnaque.',
+    head_minor: 'Rien ici ne correspond à une arnaque connue.',
     head_one: 'Il y a ici une chose qui mérite un second regard.',
     head_many: 'Plusieurs éléments correspondent à des arnaques connues.',
     what_kind: 'Ceci est {kind}.',
@@ -565,6 +575,7 @@ export const MESSAGES = {
     phone_mismatch: 'Diz que é da {org}, mas o número informado não é deles. O número real da {org} é {phone}.',
 
     head_none: 'Não encontramos sinais conhecidos de golpe.',
+    head_minor: 'Nada aqui combina com um golpe conhecido.',
     head_one: 'Há uma coisa aqui que merece um olhar mais atento.',
     head_many: 'Várias coisas aqui combinam com golpes conhecidos.',
     what_kind: 'Isto é {kind}.',
@@ -587,7 +598,7 @@ export const MESSAGES = {
 // What kind of item this looks like. Separate from MESSAGES because the same
 // words appear both as a label of their own and inside the `what_kind` sentence.
 export const KINDS = {
-  en: { letter: 'Letter', bill: 'Bill', text: 'Text message', email: 'Email', voicemail: 'Voicemail' },
+  en: { letter: 'a letter', bill: 'a bill', text: 'a text message', email: 'an email', voicemail: 'a voicemail' },
   es: { letter: 'una carta', bill: 'una factura', text: 'un mensaje de texto', email: 'un correo electrónico', voicemail: 'un correo de voz' },
   zh: { letter: '信件', bill: '账单', text: '短信', email: '电子邮件', voicemail: '语音留言' },
   hi: { letter: 'चिट्ठी', bill: 'बिल', text: 'मैसेज', email: 'ईमेल', voicemail: 'वॉइसमेल' },

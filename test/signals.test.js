@@ -132,24 +132,50 @@ test('an unrelated domain in agency mail does not get reported as faking that do
 
 // --------------------------------------------------- the never-say-real rule
 
-test('never returns a "real" verdict, whatever the input', () => {
-  const samples = [
-    '', 'Hello, how are you?', 'Your package arrived.',
-    'Chase: statement ready at chase.com',
-    'IRS notice, pay at irs.gov, call 800-829-1040',
-    'Buy a gift card now',
-  ];
-  for (const s of samples) {
-    assert.notEqual(analyzeSignals(s).verdict, 'real', `"${s}" produced a real verdict`);
+test('ordinary mail comes back clean rather than alarming', () => {
+  // The engine used to answer "careful" to everything that was not a scam,
+  // which made the warnings worthless. Clean is now a real outcome.
+  for (const s of ['Hello, how are you?', 'Your package arrived.', 'Chase: statement ready at chase.com']) {
+    assert.equal(analyzeSignals(s).verdict, 'real', `"${s}" was needlessly flagged`);
   }
 });
 
-test('nothing found is reported as ignorance, not safety', () => {
+test('a clean result never claims the item was verified', () => {
+  // The safety property that replaced "never say real": reassurance is allowed,
+  // overclaiming is not. The wording has to carry the caution.
+  const s = toSchema(analyzeSignals('Hello, how are you?'));
+  assert.equal(s.verdict, 'real');
+  assert.match(s.what_it_is, /does not mean it is real/i);
+  assert.ok(!/\b(safe|verified|genuine|authentic)\b/i.test(s.headline + ' ' + s.what_it_is),
+    `overclaims: ${s.headline} / ${s.what_it_is}`);
+});
+
+test('tone alone never reaches careful, but a real signal does', () => {
+  // Real agency mail is urgent and often unaddressed, so tone must not colour
+  // the verdict — that was the cause of "be careful" on everything.
+  assert.equal(analyzeSignals('URGENT: Final notice. Dear Customer, pay immediately.').verdict, 'real');
+  assert.equal(analyzeSignals('USPS: pay at https://usps-fee.top/pay').verdict, 'careful');
+});
+
+test('a conclusive signal still outranks everything', () => {
+  for (const s of ['Buy a gift card now to settle this.', 'Reply with the one-time code we texted you.']) {
+    assert.equal(analyzeSignals(s).verdict, 'scam', `missed: ${s}`);
+  }
+});
+
+test('nothing found is still reported honestly, not as proof', () => {
   const r = analyzeSignals('Hi Grandma, dinner is at six on Sunday. Love, Ana.');
   assert.equal(r.noScamSignsFound, true);
-  assert.equal(r.verdict, 'careful');
-  assert.equal(r.confidence, 'low', 'no signals must not read as high confidence');
+  assert.equal(r.confidence, 'low', 'nothing found is not high confidence');
   assert.match(toSchema(r).reasons[0], /does not mean it is real/i);
+});
+
+test('confirming evidence raises confidence above a bare clean result', () => {
+  const plain = analyzeSignals('Hello, how are you?');
+  const checked = analyzeSignals('Internal Revenue Service. Pay at irs.gov/payments or call 800-829-1040.');
+  assert.equal(plain.confidence, 'low');
+  assert.equal(checked.confidence, 'medium', 'a matching real domain and number is actual evidence');
+  assert.ok(checked.positives.length > 0);
 });
 
 test('empty input does not throw', () => {
@@ -187,7 +213,7 @@ test('kind labels follow the obvious cues', () => {
   assert.equal(guessKind('Short note about your package.'), 'text');
   assert.equal(guessKind('anything', 'voicemail transcript'), 'voicemail');
   assert.equal(guessKind('Dear Mr. Smith,\n\nlong body text here.\n\nSincerely,\nThe Office'), 'letter');
-  assert.equal(analyzeSignals('Amount due: $42.10.').kindLabel, 'Bill');
+  assert.equal(analyzeSignals('Amount due: $42.10.').kindLabel, 'a bill');
   assert.equal(analyzeSignals('Amount due: $42.10.', { lang: 'es' }).kindLabel, 'una factura');
 });
 

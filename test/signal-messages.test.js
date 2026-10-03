@@ -69,7 +69,7 @@ test('no message was left as the English original', () => {
 
 test('an unknown language falls back to English instead of blanking', () => {
   assert.equal(message('xx', 'pay_crypto'), MESSAGES.en.pay_crypto);
-  assert.equal(kindLabel('xx', 'bill'), 'Bill');
+  assert.equal(kindLabel('xx', 'bill'), 'a bill');
   assert.equal(message('es', 'a_key_that_does_not_exist'), '');
 });
 
@@ -108,12 +108,15 @@ test('every language produces a complete answer with no leftover placeholders', 
   }
 });
 
-test('the never-say-real rule holds in every language', () => {
+test('a clean result carries its caution in every language', () => {
   for (const code of ['en', ...LANGS]) {
     const r = analyzeSignals('Hola, la cena es a las seis.', { lang: code });
-    assert.notEqual(r.verdict, 'real', `${code} produced a real verdict`);
+    assert.equal(r.verdict, 'real', `${code} needlessly flagged ordinary mail`);
     assert.equal(r.noScamSignsFound, true);
-    // "nothing found" must still carry the caution, in every language.
-    assert.ok(toSchema(r).reasons[0].length > 0, `${code} lost the no-signs caution`);
+    const s = toSchema(r);
+    // Reassurance is fine; claiming it was verified is not. Every language must
+    // keep the "this does not mean it is real" half of the sentence.
+    assert.ok(s.reasons[0].length > 20, `${code} lost the no-signs caution`);
+    assert.ok(s.what_it_is.length > 40, `${code} summary is too thin to carry the caveat`);
   }
 });
