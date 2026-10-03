@@ -54,7 +54,14 @@ header h1{font-size:1.6rem;margin:0;letter-spacing:-.01em}
 .cat{font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:.8rem;min-height:4.4rem;text-align:start;cursor:pointer;font-weight:700;font-size:1rem;line-height:1.25}
 .cat span{display:block;font-weight:400;font-size:.8rem;color:var(--muted);margin-top:.15rem}
 .cat[aria-pressed="true"]{border-color:var(--brand);box-shadow:inset 0 0 0 2px var(--brand)}
-#sampleList{margin-top:.8rem}
+/* The examples sit inside the category grid, spanning both columns, directly
+   under the row of the card that was chosen, with a notch pointing up at it.
+   Placed after the grid instead, they read as two more categories. */
+.samples{grid-column:1/-1;position:relative;margin-top:.15rem;padding:.9rem;background:var(--bg);border:2px solid var(--brand);border-radius:14px}
+.samples::before{content:'';position:absolute;top:-8px;left:var(--notch,50%);width:13px;height:13px;margin-left:-7px;background:var(--bg);border-left:2px solid var(--brand);border-top:2px solid var(--brand);transform:rotate(45deg)}
+.samplesHead{margin:0 0 .6rem;font-weight:700;color:var(--muted);font-size:.9rem}
+.samples .sample:last-child{margin-bottom:0}
+.cat[aria-expanded="true"]{border-bottom-color:var(--brand)}
 .or{color:var(--muted);margin:1.6rem 0 .6rem;font-weight:700}
 .sample{display:block;width:100%;text-align:start;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:.9rem 1rem;margin-bottom:.7rem;cursor:pointer}
 .sample b{display:block;font-size:1.05rem}
@@ -133,7 +140,6 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
 
       <p class="or" id="orLabel" data-i18n="pickKind">Not sure what to try? Pick a kind of message.</p>
       <div class="cats" id="cats"></div>
-      <div id="sampleList" hidden></div>
 
       <div class="msg" id="msg" role="alert" hidden></div>
     </section>
@@ -418,18 +424,49 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
   $('#cancelBtn').addEventListener('click', function(){ if (ctl) ctl.abort(); });
 
   function buildSamples(){
-    var grid = $('#cats'), list = $('#sampleList'), tiles = [];
-    grid.textContent = ''; list.textContent = ''; list.hidden = true;
+    var grid = $('#cats'), tiles = [], panel = null;
+    grid.textContent = '';
+
+    function closePanel(){
+      if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+      panel = null;
+      tiles.forEach(function(x){
+        x.setAttribute('aria-pressed','false');
+        x.setAttribute('aria-expanded','false');
+        x.removeAttribute('aria-controls');
+      });
+    }
+
+    // Read the column count rather than assuming two, so the panel still lands
+    // under the right row if the grid ever becomes one column on small screens.
+    function columns(){
+      var tracks = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+      return tracks > 0 ? tracks : 1;
+    }
+
     CATS.forEach(function(c, i){
       var b = el('button','cat');
       b.type = 'button';
       b.setAttribute('aria-pressed','false');
+      b.setAttribute('aria-expanded','false');
       b.appendChild(document.createTextNode(t('cat' + i)));
       b.appendChild(el('span', null, t('nExamples').replace('{n}', c.items.length)));
       b.addEventListener('click', function(){
-        tiles.forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+        var wasOpen = b.getAttribute('aria-expanded') === 'true';
+        closePanel();
+        if (wasOpen) return; // tapping the open category again closes it
+
         b.setAttribute('aria-pressed','true');
-        list.textContent = '';
+        b.setAttribute('aria-expanded','true');
+
+        var cols = columns();
+        panel = el('div','samples');
+        panel.id = 'samples-' + i;
+        b.setAttribute('aria-controls', panel.id);
+        // Point the notch at the middle of the chosen card's column.
+        panel.style.setProperty('--notch', (((i % cols) + 0.5) / cols * 100) + '%');
+        panel.appendChild(el('p','samplesHead', t('cat' + i)));
+
         c.items.forEach(function(s){
           var sb = el('button','sample');
           sb.type = 'button';
@@ -439,10 +476,16 @@ pre{white-space:pre-wrap;font:inherit;font-size:.85rem;color:var(--muted);margin
             var r = redact(s.text);
             analyze({ text:r.text, hint:s.hint, meta:{ cleaned:r } });
           });
-          list.appendChild(sb);
+          panel.appendChild(sb);
         });
-        list.hidden = false;
-        if (list.scrollIntoView) list.scrollIntoView({ block:'nearest' });
+
+        // Insert after the last card in this card's row, so the panel opens
+        // beneath the whole row rather than splitting it.
+        var endOfRow = Math.min(Math.floor(i / cols) * cols + (cols - 1), tiles.length - 1);
+        var after = tiles[endOfRow];
+        if (after.nextSibling) grid.insertBefore(panel, after.nextSibling);
+        else grid.appendChild(panel);
+        if (panel.scrollIntoView) panel.scrollIntoView({ block:'nearest' });
       });
       tiles.push(b);
       grid.appendChild(b);
